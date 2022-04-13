@@ -5,7 +5,7 @@ const morgan = require('morgan')
 
 const authMiddleware = require('./middlewares/authMiddleware')
 const { doLogin, doLogout } = require('./controllers/authController')
-const { getSettings, updateSettings } = require('./controllers/settingsController')
+const settingsRouter = require('./routers/settingsRouter')
 
 require('express-async-errors')
 
@@ -19,10 +19,7 @@ app.use(morgan('dev'))
 app.post('/login', doLogin)
 
 app.post('/logout', authMiddleware, doLogout)
-
-app.get('/settings', authMiddleware, getSettings)
-
-app.patch('/settings', authMiddleware, updateSettings)
+app.use('/settings', authMiddleware, settingsRouter)
 
 app.use('/error', (req, res, next) => { throw new Error('Rota de erro') })
 app.use('/', (req, res, next) => { res.send('Hello World') })
