@@ -20,9 +20,8 @@ exports.doLogin = async (req, res, next) => {
     if (settings) {
         const isValid = checkPassword(password, settings.password)
 
-
         if (isValid) {
-            const token = jwt.sign({ id: 1000 }, JWT_SECRET, {
+            const token = jwt.sign({ id: settings.id }, JWT_SECRET, {
                 expiresIn: MINUTES_IN_HOUR * HOURS_IN_DAY * daysToExpire
             })
             return res.json({ token })
