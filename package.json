@@ -25,6 +25,7 @@
     "dev": "nodemon -r dotenv/config bin/server",
     "db:create": "sequelize-cli db:create",
     "db:migrate": "sequelize-cli db:migrate",
+    "db:roll": "sequelize-cli db:migrate:undo:all",
     "db:seed": "sequelize-cli db:seed:all"
   },
   "keywords": [],
