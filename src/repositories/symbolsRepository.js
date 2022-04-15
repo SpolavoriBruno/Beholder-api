@@ -23,4 +23,6 @@ exports.updateSymbol = async (symbol, newSymbolData) => {
     await currentSymbol.save()
 }
 
-exports.syncSymbols = () => { }
+exports.deleteAll = () => symbolModel.destroy({ truncate: true })
+
+exports.bulkInsert = (symbols) => symbolModel.bulkCreate(symbols)
