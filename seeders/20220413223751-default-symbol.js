@@ -10,6 +10,8 @@ module.exports = {
         if (!hasSymbol)
             return queryInterface.bulkInsert('symbols', [{
                 symbol: 'BTCBUSD',
+                base: "BTC",
+                quote: "BUSD",
                 basePrecision: 8,
                 quotePrecision: 8,
                 minNotional: '0.001',
