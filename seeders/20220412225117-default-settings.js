@@ -10,6 +10,7 @@ module.exports = {
                 email: 'test@test.com',
                 password: hashPassword('123'),
                 apiUrl: "https://testnet.binance.vision/api/",
+                streamUrl: "wss://testnet.binance.vision/ws/",
                 accessKey: '',
                 secretKey: '',
                 createdAt: new Date(),

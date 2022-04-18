@@ -19,6 +19,9 @@ exports.updateSettings = async (id, newSettings) => {
     if (newSettings.apiUrl !== currentSettings.apiUrl)
         currentSettings.apiUrl = newSettings.apiUrl
 
+    if (newSettings.streamUrl !== currentSettings.streamUrl)
+        currentSettings.streamUrl = newSettings.streamUrl
+
     if (newSettings.accessKey !== currentSettings.accessKey)
         currentSettings.accessKey = newSettings.accessKey
 
