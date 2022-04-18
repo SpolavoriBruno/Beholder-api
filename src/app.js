@@ -20,6 +20,7 @@ app.post('/logout', authMiddleware, doLogout)
 
 app.use('/settings', authMiddleware, require('./routers/settingsRouter'))
 app.use('/symbols', authMiddleware, require('./routers/symbolsRouter'))
+app.use('/exchange', authMiddleware, require('./routers/exchangeRouter'))
 
 app.use('/error', (req, res, next) => { throw new Error('Rota de erro') })
 app.use('/', (req, res, next) => { res.send('Hello World') })
