@@ -1,12 +1,21 @@
 #! /usr/bin/env node
 const app = require('../src/app')
+const appEM = require('../src/app-em')
 const appWS = require('../src/app-ws')
 const db = require('../src/db')
+const { getDefaultSettings } = require('../src/repositories/settingsRepository')
 
 const port = process.env.PORT || 3000
 
-const server = app.listen(port, () => {
-    console.info(`Server is running on port ${port}`)
-})
+getDefaultSettings()
+    .then(settings => {
+        const server = app.listen(port, () => {
+            console.info(`Server is running on port ${port}`)
+        })
 
-const wss = appWS(server)
+        const wss = appWS(server)
+
+        appEM(settings, wss)
+    })
+    .catch(error => console.error(error))
+
