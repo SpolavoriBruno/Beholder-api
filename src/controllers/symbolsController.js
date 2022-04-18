@@ -33,11 +33,11 @@ exports.updateSymbol = (req, res) => {
 }
 
 exports.syncSymbols = async (req, res) => {
-    const crypto = require('../utils/crypto')
-    const { getSettings } = require('../repositories/settingsRepository')
+    const { getDecryptedSettings } = require('../repositories/settingsRepository')
+    const { deleteAll, bulkInsert } = require('../repositories/symbolsRepository')
 
-    const settings = await getSettings(res.locals.token.id)
-    settings.secretKey = crypto.decrypt(settings.secretKey)
+    const favoriteSymbols = (await getSymbols()).filter(s => s.isFavorite === true).map(s => s.symbol)
+    const settings = await getDecryptedSettings(res.locals.token.id)
 
     const { exchangeInfo } = require('../utils/exchange')(settings.get({ plain: true }))
     exchangeInfo()
