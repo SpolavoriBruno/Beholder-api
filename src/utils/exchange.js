@@ -11,11 +11,20 @@ module.exports = settings => {
         }
     })
 
-    function exchangeInfo() {
-        return binance.exchangeInfo()
-    }
+    const exchangeInfo = () => binance.exchangeInfo()
+
+    const miniTickerStream = callback =>
+        binance.websockets.miniTicker(markets => callback(markets))
+
+    const bookStream = callback =>
+        binance.websockets.bookTickers(order => callback(order))
+
 
     return {
-        exchangeInfo
+        exchangeInfo,
+        bookStream,
+        miniTickerStream
     }
 }
+
+
