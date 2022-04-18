@@ -1,5 +1,7 @@
 const settingsModel = require('../models/settingsModel')
-const { hashPassword, encrypt } = require('../utils/crypto')
+const { hashPassword, encrypt, decrypt } = require('../utils/crypto')
+
+const settingsCache = []
 
 exports.getSettingsByEmail = email => settingsModel.findOne({ where: { email } })
 
@@ -24,4 +26,22 @@ exports.updateSettings = async (id, newSettings) => {
         currentSettings.secretKey = encrypt(newSettings.secretKey)
 
     await currentSettings.save()
+}
+
+exports.getDefaultSettings = () => settingsModel.findOne()
+
+exports.getDecryptedSettings = async (id) => {
+    let settings = settingsCache[id]
+
+    if (!settings) {
+        settings = await this.getSettings(id)
+        settings.secretKey = decrypt(settings.secretKey)
+        settingsCache[id] = settings
+    }
+
+    return settings
+}
+
+exports.clearSettingsCache = (id) => {
+    settingsCache[id] = null
 }
