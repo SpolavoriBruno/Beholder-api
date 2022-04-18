@@ -18,19 +18,29 @@ module.exports = settings => {
         }
     })
 
+    const balance = () => binance.balance()
+
     const exchangeInfo = () => binance.exchangeInfo()
 
     const miniTickerStream = callback =>
-        binance.websockets.miniTicker(markets => callback(markets))
+        binance.websockets.miniTicker(callback)
 
     const bookStream = callback =>
-        binance.websockets.bookTickers(order => callback(order))
+        binance.websockets.bookTickers(callback)
 
+    const userDataStream = (balanceCallback, executionCallback) =>
+        binance.websockets.userData(
+            balanceCallback,
+            executionCallback,
+            subscribedData => console.log(`UserDataStream - Subscribed: ${subscribedData}`)
+        )
 
     return {
+        balance,
         exchangeInfo,
         bookStream,
-        miniTickerStream
+        miniTickerStream,
+        userDataStream,
     }
 }
 

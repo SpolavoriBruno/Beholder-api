@@ -30,5 +30,10 @@ module.exports = (settings, wss) => {
         else book.push(order)
     })
 
+    exchange.userDataStream(
+        balanceData => broadcast({ balance: balanceData }),
+        executionData => broadcast({ execution: executionData })
+    )
+
     console.info("Exchange Monitor is running")
 }
