@@ -15,7 +15,8 @@
     "node-binance-api": "^0.13.1",
     "pg": "^8.7.3",
     "sequelize": "^6.19.0",
-    "sequelize-cli": "^6.4.1"
+    "sequelize-cli": "^6.4.1",
+    "ws": "^8.5.0"
   },
   "name": "beholder-backend",
   "version": "1.0.0",
