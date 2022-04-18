@@ -1,10 +1,11 @@
 const { getSymbols, getSymbol, updateSymbol } = require('../repositories/symbolsRepository')
+const logger = require('../utils/logger')
 
 exports.getSymbols = (req, res) => {
     getSymbols()
         .then(symbols => res.json(symbols))
         .catch(error => {
-            console.error(error)
+            logger.error(error)
             res.status(500).json(error)
         })
 }
@@ -14,11 +15,10 @@ exports.getSymbol = (req, res) => {
     getSymbol(symbol)
         .then(symbol => res.json(symbol))
         .catch(error => {
-            console.error(error)
+            logger.error(error)
             res.status(500).json(error)
         })
 }
-
 
 exports.updateSymbol = (req, res) => {
     const symbol = req.params.symbol
@@ -27,7 +27,7 @@ exports.updateSymbol = (req, res) => {
     updateSymbol(symbol, newSymbolData)
         .then(() => res.sendStatus(200))
         .catch(error => {
-            console.error(error)
+            logger.error(error)
             res.status(500).json(error)
         })
 }

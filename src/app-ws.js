@@ -1,19 +1,20 @@
 const Websockets = require('ws')
 const jwt = require('jsonwebtoken')
 const { isBlacklisted } = require('./controllers/authController')
+const logger = require('../utils/logger')
 
 function onMessage(data) {
-    console.log(data);
+    logger.log(data);
 }
 
 function onError(error) {
-    console.error(error)
+    logger.error(error)
 }
 
 function onConnection(ws, req) {
     ws.on('message', onMessage)
     ws.on('error', onError)
-    console.info('New Client Connected')
+    logger.info('New Client Connected')
 }
 
 function corsValidation(origin) {
@@ -29,7 +30,7 @@ function verifyClient(info, callback) {
             if (decoded && !isBlacklisted(token))
                 return callback(true)
         } catch (error) {
-            console.error(error)
+            logger.error(error)
         }
     }
     return callback(false, 401)
@@ -40,7 +41,7 @@ module.exports = server => {
         server,
         verifyClient: verifyClient
     })
-    console.info('WebSocket Server is running')
+    logger.info('WebSocket Server is running')
 
     wss.on('connection', onConnection)
 

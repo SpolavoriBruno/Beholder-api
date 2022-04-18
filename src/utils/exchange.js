@@ -1,4 +1,5 @@
 const Binance = require('node-binance-api')
+const logger = require('../utils/logger')
 
 module.exports = settings => {
     if (!settings) throw new Error('Settings are required to connect to exchange')
@@ -32,7 +33,7 @@ module.exports = settings => {
         binance.websockets.userData(
             balanceCallback,
             executionCallback,
-            subscribedData => console.log(`UserDataStream - Subscribed: ${subscribedData}`)
+            subscribedData => logger.log(`UserDataStream - Subscribed: ${subscribedData}`)
         )
 
     return {

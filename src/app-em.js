@@ -1,5 +1,6 @@
 const WebSocket = require('ws')
 const crypto = require('./utils/crypto')
+const logger = require('../utils/logger')
 
 const BOOK_STREAM_CACHE_SIZE = 10
 
@@ -35,5 +36,5 @@ module.exports = (settings, wss) => {
         executionData => broadcast({ execution: executionData })
     )
 
-    console.info("Exchange Monitor is running")
+    logger.info("Exchange Monitor is running")
 }
