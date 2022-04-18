@@ -1,9 +1,12 @@
 #! /usr/bin/env node
 const app = require('../src/app')
+const appWS = require('../src/app-ws')
 const db = require('../src/db')
 
 const port = process.env.PORT || 3000
 
-app.listen(port, ()=>{
+const server = app.listen(port, () => {
     console.info(`Server is running on port ${port}`)
 })
+
+const wss = appWS(server)
