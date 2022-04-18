@@ -49,18 +49,18 @@ exports.syncSymbols = async (req, res) => {
             return {
                 symbol: item.symbol,
                 basePrecision: item.baseAssetPrecision,
+                base: item.baseAsset,
                 quotePrecision: item.quoteAssetPrecision,
+                quote: item.quoteAsset,
                 minNotional,
                 minLotSize,
-                isFavorite: false,
+                isFavorite: favoriteSymbols.some(s => s === item.symbol),
             }
         }))
         .then(async symbols => {
-            const { deleteAll, bulkInsert } = require('../repositories/symbolsRepository')
 
             await deleteAll()
             await bulkInsert(symbols)
-            console.log(symbols)
             res.sendStatus(201)
         })
 }

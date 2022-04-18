@@ -11,10 +11,12 @@ const symbolsModel = db.define('symbol', {
         type: Sequelize.INTEGER,
         allowNull: false,
     },
+    base: Sequelize.STRING,
     quotePrecision: {
         type: Sequelize.INTEGER,
         allowNull: false,
     },
+    quote: Sequelize.STRING,
     minNotional: {
         type: Sequelize.STRING,
         allowNull: false,

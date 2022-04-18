@@ -20,6 +20,12 @@ exports.updateSymbol = async (symbol, newSymbolData) => {
     if (newSymbolData.isFavorite !== undefined && newSymbolData.isFavorite !== currentSymbol.isFavorite)
         currentSymbol.isFavorite = newSymbolData.isFavorite
 
+    if (newSymbolData.base !== undefined && newSymbolData.base !== currentSymbol.base)
+        currentSymbol.base = newSymbolData.base
+
+    if (newSymbolData.quote !== undefined && newSymbolData.quote !== currentSymbol.quote)
+        currentSymbol.quote = newSymbolData.quote
+
     await currentSymbol.save()
 }
 
