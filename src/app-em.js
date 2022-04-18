@@ -1,6 +1,8 @@
 const WebSocket = require('ws')
 const crypto = require('./utils/crypto')
 
+const BOOK_STREAM_CACHE_SIZE = 10
+
 module.exports = (settings, wss) => {
     settings.secretKey = crypto.decrypt(settings.secretKey)
 
@@ -18,7 +20,7 @@ module.exports = (settings, wss) => {
     let book = []
     exchange.bookStream(order => {
         if (!wss || !wss.clients) return
-        if (book.length === 100) {
+        if (book.length === BOOK_STREAM_CACHE_SIZE) {
             wss.clients.forEach(client => {
                 if (client.readyState === WebSocket.OPEN) {
                     client.send(JSON.stringify({ book }))
