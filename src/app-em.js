@@ -8,24 +8,23 @@ module.exports = (settings, wss) => {
 
     const exchange = require('./utils/exchange')(settings)
 
-    exchange.miniTickerStream(markets => {
+    function broadcast(jsonObject) {
         if (!wss || !wss.clients) return
         wss.clients.forEach(client => {
             if (client.readyState === WebSocket.OPEN) {
-                client.send(JSON.stringify({ miniTicker: markets }))
+                client.send(JSON.stringify(jsonObject))
             }
         });
+    }
+
+    exchange.miniTickerStream(markets => {
+        broadcast({ miniTicker: markets })
     })
 
     let book = []
     exchange.bookStream(order => {
-        if (!wss || !wss.clients) return
         if (book.length === BOOK_STREAM_CACHE_SIZE) {
-            wss.clients.forEach(client => {
-                if (client.readyState === WebSocket.OPEN) {
-                    client.send(JSON.stringify({ book }))
-                }
-            });
+            broadcast({ book })
             book = []
         }
         else book.push(order)
