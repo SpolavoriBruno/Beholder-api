@@ -4,7 +4,7 @@ const { isBlacklisted } = require('./controllers/authController')
 const logger = require('./utils/logger')
 
 function onMessage(data) {
-    logger.log(data);
+    logger.log(data)
 }
 
 function onError(error) {
@@ -39,7 +39,7 @@ function verifyClient(info, callback) {
 module.exports = server => {
     const wss = new Websockets.Server({
         server,
-        verifyClient: verifyClient
+        verifyClient
     })
     logger.info('WebSocket Server is running')
 

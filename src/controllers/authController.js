@@ -35,7 +35,7 @@ const blacklist = []
 
 exports.doLogout = (req, res, next) => {
     const token = req.headers['authorization']
-    blacklist.push(token);
+    blacklist.push(token)
     res.sendStatus(200)
 }
 

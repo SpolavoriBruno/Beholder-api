@@ -15,7 +15,7 @@ module.exports = (settings, wss) => {
             if (client.readyState === WebSocket.OPEN) {
                 client.send(JSON.stringify(jsonObject))
             }
-        });
+        })
     }
 
     exchange.miniTickerStream(markets => {

@@ -27,6 +27,6 @@ const settingsModel = db.define('settings', {
         fields: ['email'],
         unique: true
     }]
-});
+})
 
 module.exports = settingsModel
