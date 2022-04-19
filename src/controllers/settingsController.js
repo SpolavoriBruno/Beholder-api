@@ -1,4 +1,5 @@
 const { getSettings, updateSettings } = require('../repositories/settingsRepository')
+const logger = require('../utils/logger')
 
 exports.getSettings = (req, res, next) => {
     const id = res.locals.token.id
@@ -6,7 +7,7 @@ exports.getSettings = (req, res, next) => {
     getSettings(id)
         .then(settings => res.json(settings))
         .catch(error => {
-            console.err(error)
+            logger.err(error)
             res.sendStatus(500)
         })
 }

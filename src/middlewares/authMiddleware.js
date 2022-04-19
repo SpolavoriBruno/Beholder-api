@@ -1,12 +1,12 @@
 const jwt = require('jsonwebtoken')
 const { isBlacklisted } = require('../controllers/authController')
-
+const logger = require('../utils/logger')
 const JWT_SECRET = process.env.JWT_SECRET
 
 module.exports = (req, res, next) => {
     const token = req.headers['authorization']
 
-    if (token && ! isBlacklisted(token)) {
+    if (token && !isBlacklisted(token)) {
         try {
             const decode = jwt.verify(token, JWT_SECRET)
             if (decode) {
@@ -14,7 +14,7 @@ module.exports = (req, res, next) => {
                 return next()
             }
         } catch (error) {
-            console.error(error)
+            logger.error(error)
         }
     }
     res.sendStatus(401)
