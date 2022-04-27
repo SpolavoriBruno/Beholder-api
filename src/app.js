@@ -4,8 +4,6 @@ const helmet = require('helmet')
 const morgan = require('morgan')
 const router = require('./routers/router')
 
-
-
 require('express-async-errors')
 
 const app = express()
