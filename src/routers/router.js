@@ -9,6 +9,6 @@ router.post('/logout', authMiddleware, doLogout)
 router.use('/settings', authMiddleware, require('./settingsRouter'))
 router.use('/symbols', authMiddleware, require('./symbolsRouter'))
 router.use('/exchange', authMiddleware, require('./exchangeRouter'))
-
+router.use('/orders', authMiddleware, require('./ordersRouter'))
 
 module.exports = router;
