@@ -1,7 +1,5 @@
-const express = require('express')
+const router = require('express').Router()
 const { getSymbols, getSymbol, updateSymbol, syncSymbols } = require('../controllers/symbolsController.js')
-
-const router = express.Router()
 
 router.get('/', getSymbols)
 router.get('/:symbol', getSymbol)

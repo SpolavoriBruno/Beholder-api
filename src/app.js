@@ -2,9 +2,9 @@ const express = require('express')
 const cors = require('cors')
 const helmet = require('helmet')
 const morgan = require('morgan')
+const router = require('./routers/router')
 
-const authMiddleware = require('./middlewares/authMiddleware')
-const { doLogin, doLogout } = require('./controllers/authController')
+
 
 require('express-async-errors')
 
@@ -15,12 +15,7 @@ app.use(helmet())
 app.use(express.json())
 app.use(morgan('dev'))
 
-app.post('/login', doLogin)
-app.post('/logout', authMiddleware, doLogout)
-
-app.use('/settings', authMiddleware, require('./routers/settingsRouter'))
-app.use('/symbols', authMiddleware, require('./routers/symbolsRouter'))
-app.use('/exchange', authMiddleware, require('./routers/exchangeRouter'))
+app.use(router)
 
 app.use('/error', (req, res, next) => { throw new Error('Rota de erro') })
 app.use('/', (req, res, next) => { res.send('Hello World') })
