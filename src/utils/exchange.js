@@ -36,12 +36,29 @@ module.exports = settings => {
             subscribedData => logger.log(`UserDataStream - Subscribed: ${subscribedData}`)
         )
 
+    const buy = (symbols, quantity, price, options) => {
+        if (price)
+            return binance.buy(symbols, quantity, price, options)
+        return binance.marketBuy(symbols, quantity)
+    }
+
+    const sell = (symbols, quantity, price, options) => {
+        if (price)
+            return binance.sell(symbols, quantity, price, options)
+        return binance.marketSell(symbols, quantity)
+    }
+
+    const cancel = (symbol, orderId) => binance.cancel(symbol, orderId)
+
     return {
         balance,
         exchangeInfo,
         bookStream,
         miniTickerStream,
         userDataStream,
+        buy,
+        sell,
+        cancel,
     }
 }
 
