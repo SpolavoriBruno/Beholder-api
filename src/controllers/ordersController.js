@@ -1,4 +1,4 @@
-const { getOrders, insertOrder } = require('../repositories/ordersRepository')
+const { getOrders, insertOrder, updateOrderById } = require('../repositories/ordersRepository')
 const { getDecryptedSettings } = require('../repositories/settingsRepository')
 
 exports.getOrders = async (req, res, next) => {
@@ -43,5 +43,25 @@ exports.placeOrder = async (req, res, next) => {
 }
 
 exports.cancelOrder = async (req, res, next) => {
-    res.sendStatus(200)
+    const token = res.locals.token.id
+    const settings = await getDecryptedSettings(token)
+    const exchange = require('../utils/exchange')(settings)
+
+    const { symbol, orderId } = req.params
+    let result
+
+    try {
+        result = await exchange.cancel(symbol, orderId)
+    } catch (error) {
+        res.status(400).json(error.body)
+        console.error(error)
+    }
+
+    const { status } = result || {}
+
+    const order = await updateOrderById(result.orderId, result.origClientOrderId, {
+        status
+    })
+
+    res.json(order.ger({ plain: true }))
 }
