@@ -1,6 +1,7 @@
 const WebSocket = require('ws')
 const crypto = require('./utils/crypto')
 const logger = require('./utils/logger')
+const { updateOrderByOrderId } = require('./repositories/ordersRepository')
 
 const BOOK_STREAM_CACHE_SIZE = 10
 
@@ -18,6 +19,39 @@ module.exports = (settings, wss) => {
         })
     }
 
+    function processExecutionData(executionData) {
+        if (executionData.X === "NEW") return;
+
+        const order = {
+            symbol: executionData.s,
+            orderId: executionData.i,
+            clientOrderId: executionData.X === "CANCELLED" ? executionData.C : executionData.c,
+            side: executionData.S,
+            type: executionData.o,
+            status: executionData.X,
+            isMaker: executionData.m,
+            transactTime: executionData.T,
+        }
+
+        if (order.status === "FILLED") {
+            const quoteAmount = parseFloat(executionData.Z)
+            const isQuoteCommission = executionData.N && order.symbol.endsWith(executionData.N)
+
+            order.avgPrice = quoteAmount / parseFloat(executionData.z)
+            order.commision = executionData.n
+            order.net = isQuoteCommission ? quoteAmount - order.commision : quoteAmount
+        }
+
+        if (order.status === "REJECTED")
+            order.obs = executionData.r
+
+        setTimeout(() => {
+            updateOrderByOrderId(order.orderId, order.clientOrderId, order)
+                .then(order => { broadcast({ execution: order }); console.log(order) })
+                .catch(error => console.error(error))
+        }, 3000);
+    }
+
     exchange.miniTickerStream(markets => {
         broadcast({ miniTicker: markets })
     })
@@ -33,7 +67,7 @@ module.exports = (settings, wss) => {
 
     exchange.userDataStream(
         balanceData => broadcast({ balance: balanceData }),
-        executionData => broadcast({ execution: executionData })
+        processExecutionData
     )
 
     logger.info("Exchange Monitor is running")
