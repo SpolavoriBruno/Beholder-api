@@ -73,5 +73,5 @@ const updateOrder = async (currentOrder, newOrder) => {
         currentOrder.isMaker = newOrder.isMaker
 
     await currentOrder.save()
-    return currentOrder.get({ plain: true })
+    return currentOrder
 }
