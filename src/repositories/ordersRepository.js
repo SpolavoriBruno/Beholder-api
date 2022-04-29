@@ -7,7 +7,7 @@ exports.insertOrder = newOrder => {
     return orderModel.create(newOrder)
 }
 
-exports.getOrders = (symbols, page = 1) => {
+exports.getOrders = (symbol, page = 1) => {
     const options = {
         where: {},
         order: [['updatedAt', 'DESC']],
@@ -15,10 +15,10 @@ exports.getOrders = (symbols, page = 1) => {
         offset: PAGE_SIZE * (page - 1)
     }
 
-    if (symbols) {
-        if (symbols.length < 6)
+    if (symbol) {
+        if (symbol.length < 6)
             options.where.symbol = {
-                [Sequelize.Op.like]: `%${symbols}%`
+                [Sequelize.Op.like]: `%${symbol}%`
             }
         else
             options.where = { symbol }
