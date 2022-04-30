@@ -1,9 +1,18 @@
-const { getSymbols, getSymbol, updateSymbol } = require('../repositories/symbolsRepository')
+const { getSymbols, getSymbol, updateSymbol, searchSymbols } = require('../repositories/symbolsRepository')
 const logger = require('../utils/logger')
 
 exports.getSymbols = (req, res) => {
-    getSymbols()
-        .then(symbols => res.json(symbols))
+
+    const { search, page, onlyFavorites } = req.query
+
+    let result
+    if (search || page || onlyFavorites)
+        result = searchSymbols(search, onlyFavorites, page)
+    else
+        result = getSymbols()
+
+    result
+        .then(data => res.json(data))
         .catch(error => {
             logger.error(error)
             res.status(500).json(error)

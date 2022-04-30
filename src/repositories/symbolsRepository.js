@@ -1,7 +1,34 @@
+const Sequelize = require('sequelize')
 const symbolModel = require('../models/symbolModel')
 
+const PAGE_SIZE = 10
+
 exports.getSymbols = () => symbolModel.findAll()
+
 exports.getSymbol = (symbol) => symbolModel.findOne({ where: { symbol } })
+
+exports.searchSymbols = (symbol, onlyFavorites = false, page = 1) => {
+    const options = {
+        where: {},
+        order: [['symbol', 'ASC']],
+        limit: PAGE_SIZE,
+        offset: PAGE_SIZE * (page - 1)
+    }
+
+    if (symbol) {
+        if (symbol.length < 6)
+            options.where.symbol = {
+                [Sequelize.Op.like]: `%${symbol}%`
+            }
+        else
+            options.where = { search: symbol }
+    }
+
+    if (onlyFavorites) options.where.isFavorite = true
+
+    return symbolModel.findAndCountAll(options)
+}
+
 exports.updateSymbol = async (symbol, newSymbolData) => {
     const currentSymbol = await this.getSymbol(symbol)
 
