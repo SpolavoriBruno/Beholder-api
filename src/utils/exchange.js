@@ -18,57 +18,52 @@ module.exports = settings => {
             stream: formatUrl(settings.streamUrl)
         }
     })
-
-    const balance = () => binance.balance()
-
-    const exchangeInfo = () => binance.exchangeInfo()
-
-    const miniTickerStream = callback =>
-        binance.websockets.miniTicker(callback)
-
-    const bookStream = callback =>
-        binance.websockets.bookTickers(callback)
-
-    const userDataStream = (balanceCallback, executionCallback) =>
-        binance.websockets.userData(
-            balanceCallback,
-            executionCallback,
-            subscribedData => logger.log(`UserDataStream - Subscribed: ${subscribedData}`)
-        )
-
-    const buy = (symbols, quantity, price, options) => {
-        if (price)
-            return binance.buy(symbols, quantity, price, options)
-        return binance.marketBuy(symbols, quantity)
-    }
-
-    const sell = (symbols, quantity, price, options) => {
-        if (price)
-            return binance.sell(symbols, quantity, price, options)
-        return binance.marketSell(symbols, quantity)
-    }
-
-    const cancel = (symbol, orderId) => binance.cancel(symbol, orderId)
-
-    const orderStatus = (symbol, orderId) => {
-        return binance.orderStatus(symbol, orderId)
-    }
-
-    const orderTrade = async (symbol, orderId) => {
-        const trades = await binance.trades(symbol)
-        return trades.find(trade => trade.orderId === orderId)
-    }
-
     return {
-        balance,
-        exchangeInfo,
-        bookStream,
-        miniTickerStream,
-        userDataStream,
-        orderStatus,
-        orderTrade,
-        buy,
-        sell,
-        cancel,
+        balance: () => binance.balance(),
+
+        exchangeInfo: () => binance.exchangeInfo(),
+
+        miniTickerStream: callback =>
+            binance.websockets.miniTicker(callback),
+
+        bookStream: callback =>
+            binance.websockets.bookTickers(callback),
+
+        userDataStream: (balanceCallback, executionCallback) =>
+            binance.websockets.userData(
+                balanceCallback,
+                executionCallback,
+                subscribedData => logger.log(`UserDataStream - Subscribed: ${subscribedData}`)
+            ),
+
+        buy: (symbols, quantity, price, options) => {
+            if (price)
+                return binance.buy(symbols, quantity, price, options)
+            return binance.marketBuy(symbols, quantity)
+        },
+
+        sell: (symbols, quantity, price, options) => {
+            if (price)
+                return binance.sell(symbols, quantity, price, options)
+            return binance.marketSell(symbols, quantity)
+        },
+
+        cancel: (symbol, orderId) => binance.cancel(symbol, orderId),
+
+        orderStatus: (symbol, orderId) => {
+            return binance.orderStatus(symbol, orderId)
+        },
+
+        orderTrade: async (symbol, orderId) => {
+            const trades = await binance.trades(symbol)
+            return trades.find(trade => trade.orderId === orderId)
+        },
+
+        chartStream: (symbol, interval, callback) => {
+            binance.websockets.chart(symbol, interval, (symbol, interval, chart) => {
+                const ohlc = binance.ohlc(chart)
+                callback(ohlc)
+            })
+        }
     }
 }
