@@ -47,7 +47,7 @@ module.exports = (settings, wss) => {
 
         setTimeout(() => {
             updateOrderByOrderId(order.orderId, order.clientOrderId, order)
-                .then(order => { broadcast({ execution: order }); console.log(order) })
+                .then(order => broadcast({ execution: order }))
                 .catch(error => console.error(error))
         }, 3000);
     }

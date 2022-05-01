@@ -28,7 +28,6 @@ exports.placeOrder = async (req, res, next) => {
         console.error(error)
     }
 
-    console.log(result)
     const { orderId, clientOrderId, transactTime, status } = result || {}
 
     const order = await insertOrder({
