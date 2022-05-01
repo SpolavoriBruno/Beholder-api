@@ -1,5 +1,6 @@
-const { getOrders, insertOrder, updateOrderByOrderId } = require('../repositories/ordersRepository')
+const { getOrders, insertOrder, updateOrderByOrderId, getOrderById } = require('../repositories/ordersRepository')
 const { getDecryptedSettings } = require('../repositories/settingsRepository')
+const { ORDER_STATUS } = require('../utils/status')
 
 exports.getOrders = async (req, res, next) => {
     const symbol = req.params.symbol && req.params.symbol.toUpperCase()
@@ -63,4 +64,47 @@ exports.cancelOrder = async (req, res, next) => {
     })
 
     res.json(order.get({ plain: true }))
+}
+
+
+exports.syncOrder = async (req, res, next) => {
+    const id = res.locals.token.id
+    const settings = await getDecryptedSettings(id)
+    const exchange = require('../utils/exchange')(settings)
+
+    const beholderOrderId = req.params.id
+    const order = await getOrderById(beholderOrderId)
+    if (!order) return res.sendStatus(404)
+
+    let binanceOrder, binanceTrade
+
+    try {
+        binanceOrder = await exchange.orderStatus(order.symbol, order.orderId)
+        order.status = binanceOrder.status
+        order.transactTime = binanceOrder.updateTime
+
+        if (binanceOrder.status !== ORDER_STATUS.FILLED) {
+            await order.save()
+            return res.json(order.get({ plain: true }))
+        }
+
+        binanceTrade = await exchange.orderTrade(order.symbol, order.orderId)
+    } catch (error) {
+        console.error(error)
+        return res.sendStatus(404)
+    }
+
+    const quoteQuantity = parseFloat(binanceOrder.cummulativeQuoteQty)
+    order.avg = quoteQuantity / parseFloat(binanceOrder.executedQty)
+    order.isMaker = binanceTrade.isMaker
+    order.commission = binanceTrade.commission
+
+    const isQuoteCommission = binanceTrade.commissionAsset && order.symbol.endsWith(binanceTrade.commissionAsset)
+    order.net = isQuoteCommission
+        ? quoteQuantity - parseFloat(binanceTrade.commission)
+        : quoteQuantity
+
+    await order.save()
+    return res.json(order)
+
 }

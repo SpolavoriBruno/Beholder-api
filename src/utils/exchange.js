@@ -50,16 +50,25 @@ module.exports = settings => {
 
     const cancel = (symbol, orderId) => binance.cancel(symbol, orderId)
 
+    const orderStatus = (symbol, orderId) => {
+        return binance.orderStatus(symbol, orderId)
+    }
+
+    const orderTrade = async (symbol, orderId) => {
+        const trades = await binance.trades(symbol)
+        return trades.find(trade => trade.orderId === orderId)
+    }
+
     return {
         balance,
         exchangeInfo,
         bookStream,
         miniTickerStream,
         userDataStream,
+        orderStatus,
+        orderTrade,
         buy,
         sell,
         cancel,
     }
 }
-
-
