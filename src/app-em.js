@@ -2,6 +2,7 @@ const WebSocket = require('ws')
 const crypto = require('./utils/crypto')
 const logger = require('./utils/logger')
 const { updateOrderByOrderId } = require('./repositories/ordersRepository')
+const { ORDER_STATUS } = require('./utils/status')
 
 const BOOK_STREAM_CACHE_SIZE = 10
 
@@ -20,12 +21,12 @@ module.exports = (settings, wss) => {
     }
 
     function processExecutionData(executionData) {
-        if (executionData.X === "NEW") return;
+        if (executionData.X === ORDER_STATUS.NEW) return;
 
         const order = {
             symbol: executionData.s,
             orderId: executionData.i,
-            clientOrderId: executionData.X === "CANCELLED" ? executionData.C : executionData.c,
+            clientOrderId: executionData.X === ORDER_STATUS.CANCELED ? executionData.C : executionData.c,
             side: executionData.S,
             type: executionData.o,
             status: executionData.X,
@@ -33,7 +34,7 @@ module.exports = (settings, wss) => {
             transactTime: executionData.T,
         }
 
-        if (order.status === "FILLED") {
+        if (order.status === ORDER_STATUS.FILLED) {
             const quoteAmount = parseFloat(executionData.Z)
             const isQuoteCommission = executionData.N && order.symbol.endsWith(executionData.N)
 
@@ -42,7 +43,7 @@ module.exports = (settings, wss) => {
             order.net = isQuoteCommission ? quoteAmount - order.commision : quoteAmount
         }
 
-        if (order.status === "REJECTED")
+        if (order.status === ORDER_STATUS.REJECTED)
             order.obs = executionData.r
 
         setTimeout(() => {
