@@ -1,6 +1,6 @@
 'use strict';
 
-const { monitorTypes } = require('../src/repositories/monitorsRepository');
+const { MONITOR_TYPES } = require('../src/repositories/monitorsRepository');
 
 module.exports = {
     async up(queryInterface, Sequelize) {
@@ -13,7 +13,7 @@ module.exports = {
 
         if (!symbolName)
             return queryInterface.bulkInsert('monitors', [{
-                type: monitorTypes.MINI_TICKER,
+                type: MONITOR_TYPES.MINI_TICKER,
                 broadcastLabel: 'miniTicker',
                 symbol: '*',
                 interval: null,
@@ -24,7 +24,7 @@ module.exports = {
                 createdAt: new Date(),
                 updatedAt: new Date()
             }, {
-                type: monitorTypes.BOOK,
+                type: MONITOR_TYPES.BOOK,
                 broadcastLabel: 'book',
                 symbol: '*',
                 interval: null,
@@ -35,7 +35,7 @@ module.exports = {
                 createdAt: new Date(),
                 updatedAt: new Date()
             }, {
-                type: monitorTypes.USER_DATA,
+                type: MONITOR_TYPES.USER_DATA,
                 broadcastLabel: 'balance,execution',
                 symbol: '*',
                 interval: null,
@@ -46,7 +46,7 @@ module.exports = {
                 createdAt: new Date(),
                 updatedAt: new Date()
             }, {
-                type: monitorTypes.CANDLES,
+                type: MONITOR_TYPES.CANDLES,
                 broadcastLabel: null,
                 symbol: 'BTCUSDT',
                 interval: '1m',

@@ -25,8 +25,8 @@ exports.placeOrder = async (req, res, next) => {
         else
             result = await exchange.sell(symbol, quantity, price, options)
     } catch (error) {
-        res.status(400).json(error.body)
-        console.error(error)
+        console.error(error.toJSON())
+        return res.status(400).send(error.body)
     }
 
     const { orderId, clientOrderId, transactTime, status } = result || {}
@@ -53,8 +53,8 @@ exports.cancelOrder = async (req, res, next) => {
     try {
         result = await exchange.cancel(symbol, orderId)
     } catch (error) {
-        console.error(error)
-        return res.status(400).json(error.body)
+        console.error(error.toJSON())
+        return res.status(400).send(error.body)
     }
 
     const { status } = result || {}
@@ -90,8 +90,8 @@ exports.syncOrder = async (req, res, next) => {
 
         binanceTrade = await exchange.orderTrade(order.symbol, order.orderId)
     } catch (error) {
-        console.error(error)
-        return res.sendStatus(404)
+        console.error(error.toJSON())
+        return res.status(404).send(error.body)
     }
 
     const quoteQuantity = parseFloat(binanceOrder.cummulativeQuoteQty)

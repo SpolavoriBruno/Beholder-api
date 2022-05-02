@@ -2,7 +2,7 @@ const Sequelize = require('sequelize')
 const monitorModel = require('../models/monitorModel')
 const PAGE_SIZE = 10
 
-exports.monitorTypes = {
+exports.MONITOR_TYPES = {
     MINI_TICKER: 'MINI_TICKER',
     BOOK: 'BOOK',
     USER_DATA: 'USER_DATA',
@@ -37,7 +37,7 @@ exports.monitorExists = async (type, symbol, interval) => {
 exports.updateMonitor = async (id, newMonitor) => {
     const currentMonitor = await this.getMonitor(id)
 
-    if (currentMonitor.type === this.monitorTypes.CANDLES) {
+    if (currentMonitor.type === this.MONITOR_TYPES.CANDLES) {
         if (newMonitor.interval && newMonitor.interval !== currentMonitor.interval)
             currentMonitor.interval = newMonitor.interval
     }

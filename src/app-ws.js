@@ -36,6 +36,16 @@ function verifyClient(info, callback) {
     return callback(false, 401)
 }
 
+function broadcast(jsonObject) {
+    if (!this.clients) return
+    this.clients.forEach(client => {
+        if (client.readyState === Websockets.OPEN) {
+            client.send(JSON.stringify(jsonObject))
+        }
+    })
+}
+
+
 module.exports = server => {
     const wss = new Websockets.Server({
         server,
@@ -44,6 +54,6 @@ module.exports = server => {
     logger.info('WebSocket Server is running')
 
     wss.on('connection', onConnection)
-
+    wss.broadcast = broadcast
     return wss
 }

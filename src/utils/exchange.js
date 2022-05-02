@@ -10,7 +10,7 @@ module.exports = settings => {
         return url.endsWith('/') ? url : `${url}/`
     }
 
-    const binance = new Binance({
+    const privateAPI = new Binance({
         APIKEY: settings.accessKey,
         APISECRET: settings.secretKey,
         urls: {
@@ -18,19 +18,22 @@ module.exports = settings => {
             stream: formatUrl(settings.streamUrl)
         }
     })
-    return {
-        balance: () => binance.balance(),
 
-        exchangeInfo: () => binance.exchangeInfo(),
+    const publicAPI = new Binance()
+
+    return {
+        balance: () => privateAPI.balance(),
+
+        exchangeInfo: () => publicAPI.exchangeInfo(),
 
         miniTickerStream: callback =>
-            binance.websockets.miniTicker(callback),
+            publicAPI.websockets.miniTicker(callback),
 
         bookStream: callback =>
-            binance.websockets.bookTickers(callback),
+            publicAPI.websockets.bookTickers(callback),
 
         userDataStream: (balanceCallback, executionCallback) =>
-            binance.websockets.userData(
+            privateAPI.websockets.userData(
                 balanceCallback,
                 executionCallback,
                 subscribedData => logger.log(`UserDataStream - Subscribed: ${subscribedData}`)
@@ -38,30 +41,30 @@ module.exports = settings => {
 
         buy: (symbols, quantity, price, options) => {
             if (price)
-                return binance.buy(symbols, quantity, price, options)
-            return binance.marketBuy(symbols, quantity)
+                return privateAPI.buy(symbols, quantity, price, options)
+            return privateAPI.marketBuy(symbols, quantity)
         },
 
         sell: (symbols, quantity, price, options) => {
             if (price)
-                return binance.sell(symbols, quantity, price, options)
-            return binance.marketSell(symbols, quantity)
+                return privateAPI.sell(symbols, quantity, price, options)
+            return privateAPI.marketSell(symbols, quantity)
         },
 
-        cancel: (symbol, orderId) => binance.cancel(symbol, orderId),
+        cancel: (symbol, orderId) => privateAPI.cancel(symbol, orderId),
 
         orderStatus: (symbol, orderId) => {
-            return binance.orderStatus(symbol, orderId)
+            return privateAPI.orderStatus(symbol, orderId)
         },
 
         orderTrade: async (symbol, orderId) => {
-            const trades = await binance.trades(symbol)
+            const trades = await privateAPI.trades(symbol)
             return trades.find(trade => trade.orderId === orderId)
         },
 
         chartStream: (symbol, interval, callback) => {
-            binance.websockets.chart(symbol, interval, (symbol, interval, chart) => {
-                const ohlc = binance.ohlc(chart)
+            publicAPI.websockets.chart(symbol, interval, (symbol, interval, chart) => {
+                const ohlc = publicAPI.ohlc(chart)
                 callback(ohlc)
             })
         }

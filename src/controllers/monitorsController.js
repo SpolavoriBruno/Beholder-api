@@ -1,4 +1,4 @@
-const { deleteMonitor, getActiveMonitor, getMonitor, getMonitors, insertMonitor, monitorTypes, updateMonitor, } = require('../repositories/monitorsRepository')
+const { deleteMonitor, getMonitor, getMonitors, insertMonitor, updateMonitor, } = require('../repositories/monitorsRepository')
 
 
 exports.getMonitor = (req, res, next) => {
@@ -59,6 +59,7 @@ exports.updateMonitor = async (req, res, next) => {
     const newMonitor = req.body
 
     const currentMonitor = await getMonitor(id)
+    if (!currentMonitor) return res.sendStatus(404)
     if (currentMonitor.isSystemMon) return res.sendStatus(403)
 
 
