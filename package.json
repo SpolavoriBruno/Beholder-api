@@ -12,10 +12,11 @@
     "helmet": "^5.0.2",
     "jsonwebtoken": "^8.5.1",
     "morgan": "^1.10.0",
-    "node-binance-api": "^0.13.1",
+    "node-binance-api": "^0.12.5",
     "pg": "^8.7.3",
     "sequelize": "^6.19.0",
     "sequelize-cli": "^6.4.1",
+    "technicalindicators": "^3.1.0",
     "ws": "^8.5.0"
   },
   "name": "beholder-backend",

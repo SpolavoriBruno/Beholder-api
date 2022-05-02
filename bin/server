@@ -1,8 +1,9 @@
 #! /usr/bin/env node
+
+const beholder = require('../src/beholder')
 const app = require('../src/app')
 const appEM = require('../src/app-em')
 const appWS = require('../src/app-ws')
-const db = require('../src/db')
 const logger = require('../src/utils/logger')
 const { getDefaultSettings } = require('../src/repositories/settingsRepository')
 
@@ -14,9 +15,10 @@ getDefaultSettings()
             logger.info(`Server is running on port ${port}`)
         })
 
+        beholder.init()
         const wss = appWS(server)
 
-        appEM(settings, wss)
+        appEM.init(settings, beholder, wss)
     })
     .catch(error => logger.error(error))
 
