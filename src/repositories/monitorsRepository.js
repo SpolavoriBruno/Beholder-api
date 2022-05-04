@@ -7,11 +7,18 @@ exports.MONITOR_TYPES = {
     BOOK: 'BOOK',
     USER_DATA: 'USER_DATA',
     CANDLES: 'CANDLES',
+    WALLET: 'WALLET',
+    LAST_ORDER: 'LAST_ORDER',
+    LAST_CANDLE: 'LAST_CANDLE',
 }
 
 exports.insertMonitor = async newMonitor => {
+    newMonitor.interval = newMonitor.interval || null
+
     const alreadyExists = await this.monitorExists(newMonitor.type, newMonitor.symbol, newMonitor.interval)
-    if (alreadyExists) throw new Error('Monitor already exists')
+    if (alreadyExists)
+        return Promise.reject({ status: 409, body: 'Monitor already exists' })
+
     return monitorModel.create(newMonitor)
 }
 

@@ -1,5 +1,5 @@
 const { deleteMonitor, getMonitor, getMonitors, insertMonitor, updateMonitor, } = require('../repositories/monitorsRepository')
-
+const appEM = require('../app-em')
 
 exports.getMonitor = (req, res, next) => {
     const id = req.params.id
@@ -22,7 +22,7 @@ exports.startMonitor = async (req, res, next) => {
     if (monitor.isActive) return res.sendStatus(204)
     if (monitor.isSystemMon) return res.sendStatus(403)
 
-    // startMonitor(id)
+    appEM.startMonitor(monitor)
 
     monitor.isActive = true
     await monitor.save()
@@ -35,7 +35,7 @@ exports.stopMonitor = async (req, res, next) => {
     if (!monitor.isActive) return res.sendStatus(204)
     if (monitor.isSystemMon) return res.sendStatus(403)
 
-    // stopMonitor(id)
+    appEM.stopMonitor(monitor)
 
     monitor.isActive = false
     await monitor.save()
@@ -47,11 +47,14 @@ exports.insertMonitor = (req, res, next) => {
     insertMonitor(newMonitor)
         .then(monitor => {
             if (monitor.isActive) {
-                // startMonitor(monitor.id)
+                appEM.startMonitor(monitor)
             }
             res.json(monitor.get({ plain: true }))
         })
-        .catch(next)
+        .catch(error => {
+            console.log(error)
+            res.status(error.status).json(error.body)
+        })
 }
 
 exports.updateMonitor = async (req, res, next) => {
@@ -66,14 +69,17 @@ exports.updateMonitor = async (req, res, next) => {
     updateMonitor(id, newMonitor)
         .then(monitor => {
             if (monitor.isActive) {
-                // stopMonitor(monitor.id)
-                // startMonitor(monitor.id)
+                appEM.stopMonitor(currentMonitor)
+                appEM.startMonitor(monitor)
             } else {
-                // stopMonitor(monitor.id)
+                appEM.stopMonitor(currentMonitor)
             }
             res.json(monitor.get({ plain: true }))
         })
-        .catch(next)
+        .catch(error => {
+            console.log(error)
+            res.status(500).json(error.body)
+        })
 }
 
 exports.deleteMonitor = async (req, res, next) => {
@@ -83,10 +89,13 @@ exports.deleteMonitor = async (req, res, next) => {
     if (currentMonitor.isSystemMon) return res.sendStatus(403)
 
     if (currentMonitor.isActive) {
-        // stopMonitor(id)
+        appEM.stopMonitor(currentMonitor)
     }
 
     deleteMonitor(id)
         .then(monitor => res.sendStatus(204))
-        .catch(next)
+        .catch(error => {
+            console.log(error)
+            res.status(500).json(error.body)
+        })
 }

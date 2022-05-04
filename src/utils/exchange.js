@@ -24,20 +24,12 @@ module.exports = settings => {
     return {
         balance: () => privateAPI.balance(),
 
-        exchangeInfo: () => publicAPI.exchangeInfo(),
+        exchangeInfo: () => privateAPI.exchangeInfo(),
 
-        miniTickerStream: callback =>
-            publicAPI.websockets.miniTicker(callback),
+        cancel: (symbol, orderId) => privateAPI.cancel(symbol, orderId),
 
-        bookStream: callback =>
-            publicAPI.websockets.bookTickers(callback),
-
-        userDataStream: (balanceCallback, executionCallback) =>
-            privateAPI.websockets.userData(
-                balanceCallback,
-                executionCallback,
-                subscribedData => logger.log(`UserDataStream - Subscribed: ${subscribedData}`)
-            ),
+        orderStatus: (symbol, orderId) =>
+            privateAPI.orderStatus(symbol, orderId),
 
         buy: (symbols, quantity, price, options) => {
             if (price)
@@ -51,22 +43,38 @@ module.exports = settings => {
             return privateAPI.marketSell(symbols, quantity)
         },
 
-        cancel: (symbol, orderId) => privateAPI.cancel(symbol, orderId),
-
-        orderStatus: (symbol, orderId) => {
-            return privateAPI.orderStatus(symbol, orderId)
-        },
-
         orderTrade: async (symbol, orderId) => {
             const trades = await privateAPI.trades(symbol)
             return trades.find(trade => trade.orderId === orderId)
         },
 
-        chartStream: (symbol, interval, callback) => {
+        userDataStream: (balanceCallback, executionCallback) =>
+            privateAPI.websockets.userData(
+                balanceCallback,
+                executionCallback,
+                subscribedData => logger.log(`UserDataStream - Subscribed: ${subscribedData}`)
+            ),
+
+        chartStream: (symbol, interval, callback) =>
             publicAPI.websockets.chart(symbol, interval, (symbol, interval, chart) => {
                 const ohlc = publicAPI.ohlc(chart)
                 callback(ohlc)
-            })
-        }
+            }),
+
+        bookStream: (symbol, callback) => {
+            if (symbol) privateAPI.websockets.bookTickers(symbol, callback)
+            else privateAPI.websockets.bookTickers(callback)
+        },
+
+        miniTickerStream: (symbol, callback) => {
+            if (symbol) privateAPI.websockets.miniTicker(callback)
+            else privateAPI.websockets.miniTicker(callback)
+        },
+
+        terminateMiniTickerStream: symbol => privateAPI.websockets.terminate(`${symbol.toLowerCase()}@miniTicker`),
+        terminateBookStream: symbol => privateAPI.websockets.terminate(`${symbol.toLowerCase()}@bookTicker`),
+        terminateChartStream: (symbol, interval) =>
+            publicAPI.websockets.terminate(`${symbol.toLowerCase()}@kline_${interval}`)
+
     }
 }
