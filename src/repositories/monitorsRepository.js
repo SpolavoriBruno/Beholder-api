@@ -1,16 +1,32 @@
-const Sequelize = require('sequelize')
 const monitorModel = require('../models/monitorModel')
 const PAGE_SIZE = 10
 
-exports.MONITOR_TYPES = {
-    MINI_TICKER: 'MINI_TICKER',
+// User can create/manipulate this monitors
+const USER_MONITOR_TYPES = {
     TICKER: 'TICKER',
-    BOOK: 'BOOK',
+    MINI_TICKER: 'MINI_TICKER',
+}
+
+// System monitors & user monitors
+exports.MONITOR_TYPES = {
     USER_DATA: 'USER_DATA',
+    BOOK: 'BOOK',
     CANDLES: 'CANDLES',
-    WALLET: 'WALLET',
-    LAST_ORDER: 'LAST_ORDER',
-    LAST_CANDLE: 'LAST_CANDLE',
+    ...USER_MONITOR_TYPES,
+}
+
+exports.getMonitorTypes = _ => {
+    return new Promise((resolve, reject) => {
+        const userMonitorTypesArray = Object.keys(USER_MONITOR_TYPES)
+        const monitorTypesArray = Object.values(this.MONITOR_TYPES)
+
+        resolve(
+            monitorTypesArray.map(type => ({
+                type,
+                systemOnly: !userMonitorTypesArray.includes(type),
+            }))
+        )
+    })
 }
 
 exports.insertMonitor = async newMonitor => {

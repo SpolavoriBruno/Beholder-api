@@ -1,4 +1,4 @@
-const { deleteMonitor, getMonitor, getMonitors, insertMonitor, updateMonitor, } = require('../repositories/monitorsRepository')
+const { deleteMonitor, getMonitor, getMonitors, insertMonitor, updateMonitor, getMonitorTypes, MONITOR_TYPES } = require('../repositories/monitorsRepository')
 const appEM = require('../app-em')
 
 exports.getMonitor = (req, res, next) => {
@@ -13,6 +13,12 @@ exports.getMonitors = (req, res, next) => {
     const page = req.query.page
     getMonitors(page)
         .then(monitors => res.json(monitors))
+        .catch(next)
+}
+
+exports.getMonitorTypes = (req, res, next) => {
+    getMonitorTypes()
+        .then(monitorTypes => res.json(monitorTypes))
         .catch(next)
 }
 
