@@ -76,7 +76,7 @@ async function loadWallet(exchange) {
 function startUserDataMonitor(broadcastLabel, logs) {
     if (!exchange) throw new Error('Exchange is not initialized')
 
-    const [balanceBroadcast, executionBroadcast] = broadcastLabel.split(',')
+    const [balanceBroadcast, executionBroadcast] = broadcastLabel ? broadcastLabel.split(',') : [null, null]
 
     loadWallet(exchange)
 
