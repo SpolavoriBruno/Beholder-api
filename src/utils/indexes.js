@@ -21,7 +21,6 @@ exports.RSI = (closes, period = 14) => {
     }
 }
 
-
 exports.MACD = (closes, fastPeriod = 12, slowPeriod = 26, signalPeriod = 9) => {
     const macd = technicalindicators.macd({
         SimpleMAOscillator: false,
@@ -113,7 +112,6 @@ exports.processIndexes = (indexes, interval, ohlc, callback) => {
             case this.INDEX_KEYS.BOLLINGER_BAND:
                 result = this.BollingerBands(ohlc.close)
                 break
-
         }
         callback(index, result)
     })

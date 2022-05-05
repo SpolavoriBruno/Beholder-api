@@ -73,6 +73,33 @@ async function loadWallet(exchange) {
     }
 }
 
+function sanatizeTicker(data) {
+    delete data.eventType
+    delete data.eventTime
+    delete data.symbol
+    delete data.openTime
+    delete data.closeTime
+    delete data.firstTradeId
+    delete data.lastTradeId
+    delete data.numTrades
+    delete data.quoteVolume
+    delete data.closeQty
+    delete data.bestBidQty
+    delete data.bestAskQty
+    delete data.volume
+
+    data.priceChange = parseFloat(data.priceChange)
+    data.percentChange = parseFloat(data.percentChange)
+    data.averagePrice = parseFloat(data.averagePrice)
+    data.prevClose = parseFloat(data.prevClose)
+    data.open = parseFloat(data.open)
+    data.close = parseFloat(data.close)
+    data.bestBid = parseFloat(data.bestBid)
+    data.bestAsk = parseFloat(data.bestAsk)
+
+    return data
+}
+
 function startUserDataMonitor(broadcastLabel, logs) {
     if (!exchange) throw new Error('Exchange is not initialized')
 
@@ -197,6 +224,41 @@ function stopChartMonitor(symbol, interval, indexes, logs) {
     logger.info(`Stop Chart Monitor - ${symbol}.${interval}`)
 }
 
+function startTickerMonitor(symbol, broadcastLabel, logs) {
+    if (!exchange) throw new Error('Exchange is not initialized')
+    if (!symbol) return new Error('Cant start chart monitor without symbol')
+
+    exchange.tickerStream(symbol, data => {
+        try {
+            const ticker = sanatizeTicker({ ...data })
+            const currentMemory = beholder.getMemory(symbol, INDEX_KEYS.TICKER)
+
+            const newMemory = {}
+            newMemory.previous = currentMemory ? currentMemory.current : null
+            newMemory.current = ticker
+
+            beholder.updateMemory(data.symbol, INDEX_KEYS.TICKER, null, newMemory)
+
+            if (broadcastLabel && WSS) WSS.broadcast({ [broadcastLabel]: data })
+
+        } catch (error) {
+            if (logs) logger.error(error)
+        }
+    })
+    logger.info(`Start Ticker Monitor - ${symbol}.${broadcastLabel}`)
+}
+
+function stopTickerMonitor(symbol, logs) {
+    if (!exchange) throw new Error('Exchange is not initialized')
+    if (!symbol) return new Error('Cant stop Ticker monitor without symbol')
+
+    exchange.terminateTickerStream(symbol)
+
+    beholder.deleteMemory(symbol, INDEX_KEYS.LAST_CANDLE)
+
+    logger.info(`Stop Ticker Monitor - ${symbol}`)
+}
+
 exports.stopMonitor = monitor => {
     switch (monitor.type) {
         case MONITOR_TYPES.CANDLES:
@@ -206,18 +268,37 @@ exports.stopMonitor = monitor => {
             return stopBookMonitor(monitor.symbol)
         case MONITOR_TYPES.MINI_TICKER:
             return stopMiniTickerMonitor(monitor.symbol)
+        case MONITOR_TYPES.TICKER:
+            return stopTickerMonitor(monitor.symbol)
+
     }
 }
 
-exports.startMonitor = monitor => {
-    switch (monitor.type) {
-        case MONITOR_TYPES.BOOK:
-            return startBookMonitor(monitor.symbol, monitor.broadcastLabel, monitor.logs)
+exports.startMonitor = ({ symbol, type, broadcastLabel, logs, indexes, interval }) => {
+    symbol = symbol === '*' ? null : symbol
+
+    switch (type) {
         case MONITOR_TYPES.MINI_TICKER:
-            return startMiniTickerMonitor(monitor.symbol, monitor.broadcastLabel, monitor.logs)
+            return startMiniTickerMonitor(symbol, broadcastLabel, logs)
+
+        case MONITOR_TYPES.TICKER:
+            return startTickerMonitor(symbol, broadcastLabel, logs)
+
+        case MONITOR_TYPES.BOOK:
+            return startBookMonitor(symbol, broadcastLabel, logs)
+
+        case MONITOR_TYPES.USER_DATA:
+            return startUserDataMonitor(broadcastLabel, logs)
+
         case MONITOR_TYPES.CANDLES:
-            const indexes = monitor.indexes ? monitor.indexes.split(',') : []
-            return startChartMonitor(monitor.symbol, monitor.interval, indexes, monitor.broadcastLabel, monitor.logs)
+            indexes = indexes ? indexes.split(',') : []
+            return startChartMonitor(
+                symbol,
+                interval,
+                indexes,
+                broadcastLabel,
+                logs
+            )
     }
 }
 
@@ -234,26 +315,7 @@ exports.init = async (settings, beholderInstance, wssInstance) => {
     const monitors = await getActiveMonitors()
     monitors.map(monitor => {
         setTimeout(() => {
-            const symbol = monitor.symbol === '*' ? null : monitor.symbol
-            switch (monitor.type) {
-                case INDEX_KEYS.MINI_TICKER:
-                    return startMiniTickerMonitor(symbol, monitor.broadcastLabel, monitor.logs)
-
-                case INDEX_KEYS.BOOK:
-                    return startBookMonitor(symbol, monitor.broadcastLabel, monitor.logs)
-
-                case INDEX_KEYS.USER_DATA:
-                    return startUserDataMonitor(monitor.broadcastLabel, monitor.logs)
-
-                case INDEX_KEYS.CANDLES:
-                    return startChartMonitor(
-                        monitor.symbol,
-                        monitor.interval,
-                        monitor.indexes.split(','),
-                        monitor.broadcastLabel,
-                        monitor.logs
-                    )
-            }
+            this.startMonitor(monitor)
         }, 300)
     })
 

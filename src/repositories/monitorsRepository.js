@@ -4,6 +4,7 @@ const PAGE_SIZE = 10
 
 exports.MONITOR_TYPES = {
     MINI_TICKER: 'MINI_TICKER',
+    TICKER: 'TICKER',
     BOOK: 'BOOK',
     USER_DATA: 'USER_DATA',
     CANDLES: 'CANDLES',

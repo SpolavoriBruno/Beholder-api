@@ -9,6 +9,11 @@ let lockBrain = false
 
 const LOGS = process.env.BEHOLDER_LOGS === 'true'
 
+function getMemoryKey(symbol, index, interval) {
+    const indexKey = interval ? `${index}_${interval}` : index
+    return `${symbol}:${indexKey}`
+}
+
 exports.INDEX_KEYS = {
     ...MONITOR_TYPES,
     ...INDEX_KEYS
@@ -20,8 +25,7 @@ exports.init = (automations) => {
 }
 
 exports.deleteMemory = (symbol, index, interval) => {
-    const indexKey = interval ? `${index}_${interval}` : index
-    const memoryKey = `${symbol}:${indexKey}`
+    const memoryKey = getMemoryKey(symbol, index, interval)
     try {
         lockMemory = true
         delete MEMORY[memoryKey]
@@ -33,13 +37,20 @@ exports.deleteMemory = (symbol, index, interval) => {
 
 exports.updateMemory = (symbol, index, interval, value) => {
     while (lockMemory);
-    const indexKey = interval ? `${index}_${interval}` : index
-    const memoryKey = `${symbol}:${indexKey}`
+    const memoryKey = getMemoryKey(symbol, index, interval)
 
     MEMORY[memoryKey] = value
 
     if (LOGS) logger.info(`Beholder Memory Update - ${memoryKey}`, value)
 }
 
-exports.getMemory = () => ({ ...MEMORY })
-exports.getBrain = () => ({ ...MEMORY })
+exports.getBrain = () => ({ ...BRAIN })
+exports.getMemory = (symbol, index, interval) => {
+    if (symbol && index) {
+        const memoryKey = getMemoryKey(symbol, index, interval)
+
+        result = MEMORY[memoryKey]
+        return typeof result === 'object' ? { ...result } : result
+    }
+    return { ...MEMORY }
+}

@@ -71,10 +71,14 @@ module.exports = settings => {
             else privateAPI.websockets.miniTicker(callback)
         },
 
+        tickerStream: (symbol, callback) =>
+            publicAPI.websockets.prevDay(symbol, (data, converted) => callback(converted)),
+
         terminateMiniTickerStream: symbol => privateAPI.websockets.terminate(`${symbol.toLowerCase()}@miniTicker`),
         terminateBookStream: symbol => privateAPI.websockets.terminate(`${symbol.toLowerCase()}@bookTicker`),
         terminateChartStream: (symbol, interval) =>
-            publicAPI.websockets.terminate(`${symbol.toLowerCase()}@kline_${interval}`)
+            publicAPI.websockets.terminate(`${symbol.toLowerCase()}@kline_${interval}`),
+        terminateTickerStrem: (symbol) => publicAPI.websockets.terminate(`${symbol.toLowerCase()}@ticker`),
 
     }
 }
