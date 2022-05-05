@@ -3,7 +3,7 @@ const { updateOrderByOrderId } = require('./repositories/ordersRepository')
 const { ORDER_STATUS } = require('./utils/status')
 const { getActiveMonitors, MONITOR_TYPES } = require('./repositories/monitorsRepository')
 const { processIndexes } = require('./utils/indexes')
-const { INDEX_KEYS } = require('./beholder')
+const { MEMORY_KEYS } = require('./beholder')
 
 const BOOK_STREAM_CACHE_SIZE = 10
 let WSS, beholder, exchange;
@@ -40,7 +40,7 @@ function processExecutionData(executionData, broadcastLabel) {
             .then(order => {
                 if (order) {
 
-                    beholder.updateMemory(order.symbol, INDEX_KEYS.LAST_ORDER, null, order)
+                    beholder.updateMemory(order.symbol, MEMORY_KEYS.LAST_ORDER, null, order)
 
                     if (broadcastLabel && WSS)
                         WSS.broadcast({ [broadcastLabel]: order })
@@ -59,7 +59,7 @@ async function loadWallet(exchange) {
         // TODO: info is not defined | 'balanceData error' in binance lib?
         const wallet = Object.entries(info || []).map(item => {
 
-            beholder.updateMemory(item[0], INDEX_KEYS.WALLET, null, parseFloat(item[1].available))
+            beholder.updateMemory(item[0], MEMORY_KEYS.WALLET, null, parseFloat(item[1].available))
 
             return {
                 symbol: item[0],
@@ -137,7 +137,7 @@ function startMiniTickerMonitor(symbol, broadcastLabel, logs) {
 
                 const converted = {}
                 Object.entries(market[1]).map(prop => converted[prop[0]] = parseFloat(prop[1]))
-                beholder.updateMemory(market[0], INDEX_KEYS.MINI_TICKER, null, converted)
+                beholder.updateMemory(market[0], MEMORY_KEYS.MINI_TICKER, null, converted)
             })
         })
     } catch (error) {
@@ -173,7 +173,7 @@ function startBookMonitor(symbol, broadcastLabel, logs) {
         delete orderCopy.updatedId
         const converted = {}
         Object.entries(orderCopy).map(prop => converted[prop[0]] = parseFloat(prop[1]))
-        beholder.updateMemory(order.symbol, INDEX_KEYS.BOOK, null, converted)
+        beholder.updateMemory(order.symbol, MEMORY_KEYS.BOOK, null, converted)
 
     })
     logger.info(`Start Book Monitor - ${broadcastLabel}`)
@@ -202,7 +202,7 @@ function startChartMonitor(symbol, interval, indexes, broadcastLabel, logs) {
         if (logs) logger.info(`Chart Monitor - ${broadcastLabel}`, lastCandle)
         if (broadcastLabel && WSS) WSS.broadcast({ [broadcastLabel]: lastCandle })
 
-        beholder.updateMemory(symbol, INDEX_KEYS.LAST_CANDLE, interval, lastCandle)
+        beholder.updateMemory(symbol, MEMORY_KEYS.LAST_CANDLE, interval, lastCandle)
 
         processIndexes(indexes, interval, ohlc, (index, result) => {
             beholder.updateMemory(symbol, index, interval, result)
@@ -217,7 +217,8 @@ function stopChartMonitor(symbol, interval, indexes, logs) {
     if (!symbol) return new Error('Cant stop chart monitor without symbol')
 
     exchange.terminateChartStream(symbol, interval)
-    beholder.deleteMemory(symbol, INDEX_KEYS.LAST_CANDLE, interval)
+    beholder.deleteMemory(symbol, MEMORY_KEYS.LAST_CANDLE, interval)
+
     if (indexes && Array.isArray(indexes))
         indexes.map(index => beholder.deleteMemory(symbol, index, interval))
 
@@ -231,13 +232,13 @@ function startTickerMonitor(symbol, broadcastLabel, logs) {
     exchange.tickerStream(symbol, data => {
         try {
             const ticker = sanatizeTicker({ ...data })
-            const currentMemory = beholder.getMemory(symbol, INDEX_KEYS.TICKER)
+            const currentMemory = beholder.getMemory(symbol, MEMORY_KEYS.TICKER)
 
             const newMemory = {}
             newMemory.previous = currentMemory ? currentMemory.current : null
             newMemory.current = ticker
 
-            beholder.updateMemory(data.symbol, INDEX_KEYS.TICKER, null, newMemory)
+            beholder.updateMemory(data.symbol, MEMORY_KEYS.TICKER, null, newMemory)
 
             if (broadcastLabel && WSS) WSS.broadcast({ [broadcastLabel]: data })
 
@@ -254,7 +255,7 @@ function stopTickerMonitor(symbol, logs) {
 
     exchange.terminateTickerStream(symbol)
 
-    beholder.deleteMemory(symbol, INDEX_KEYS.LAST_CANDLE)
+    beholder.deleteMemory(symbol, MEMORY_KEYS.LAST_CANDLE)
 
     logger.info(`Stop Ticker Monitor - ${symbol}`)
 }

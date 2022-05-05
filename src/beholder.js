@@ -14,7 +14,10 @@ function getMemoryKey(symbol, index, interval) {
     return `${symbol}:${indexKey}`
 }
 
-exports.INDEX_KEYS = {
+exports.MEMORY_KEYS = {
+    WALLET: 'WALLET',
+    LAST_ORDER: 'LAST_ORDER',
+    LAST_CANDLE: 'LAST_CANDLE',
     ...MONITOR_TYPES,
     ...INDEX_KEYS
 }
@@ -44,13 +47,13 @@ exports.updateMemory = (symbol, index, interval, value) => {
     if (LOGS) logger.info(`Beholder Memory Update - ${memoryKey}`, value)
 }
 
-exports.getBrain = () => ({ ...BRAIN })
-exports.getMemory = (symbol, index, interval) => {
-    if (symbol && index) {
-        const memoryKey = getMemoryKey(symbol, index, interval)
+exports.getBrain = _ => ({ ...BRAIN })
+exports.getMemories = _ => ({ ...MEMORY })
 
-        result = MEMORY[memoryKey]
-        return typeof result === 'object' ? { ...result } : result
-    }
-    return { ...MEMORY }
+exports.getMemory = (symbol, index, interval) => {
+    const memoryKey = getMemoryKey(symbol, index, interval)
+
+    result = MEMORY[memoryKey]
+    return typeof result === 'object' ? { ...result } : result
 }
+
