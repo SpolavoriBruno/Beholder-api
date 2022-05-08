@@ -1,7 +1,7 @@
 const Sequelize = require('sequelize')
 const symbolModel = require('../models/symbolModel')
 
-const PAGE_SIZE = 15
+const PAGE_SIZE = 10
 
 exports.getSymbols = () => symbolModel.findAll()
 
