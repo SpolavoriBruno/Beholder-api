@@ -96,6 +96,8 @@ function sanatizeTicker(data) {
     data.close = parseFloat(data.close)
     data.bestBid = parseFloat(data.bestBid)
     data.bestAsk = parseFloat(data.bestAsk)
+    data.high = parseFloat(data.high)
+    data.low = parseFloat(data.low)
 
     return data
 }
@@ -235,7 +237,7 @@ function startTickerMonitor(symbol, broadcastLabel, logs) {
             const currentMemory = beholder.getMemory(symbol, MEMORY_KEYS.TICKER)
 
             const newMemory = {}
-            newMemory.previous = currentMemory ? currentMemory.current : null
+            newMemory.previous = currentMemory ? currentMemory.current : ticker
             newMemory.current = ticker
 
             beholder.updateMemory(data.symbol, MEMORY_KEYS.TICKER, null, newMemory)
@@ -255,7 +257,7 @@ function stopTickerMonitor(symbol, logs) {
 
     exchange.terminateTickerStream(symbol)
 
-    beholder.deleteMemory(symbol, MEMORY_KEYS.LAST_CANDLE)
+    beholder.deleteMemory(symbol, MEMORY_KEYS.TICKER)
 
     logger.info(`Stop Ticker Monitor - ${symbol}`)
 }

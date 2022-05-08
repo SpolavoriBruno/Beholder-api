@@ -5,13 +5,13 @@ const PAGE_SIZE = 10
 const USER_MONITOR_TYPES = {
     TICKER: 'TICKER',
     MINI_TICKER: 'MINI_TICKER',
+    CANDLES: 'CANDLES',
 }
 
 // System monitors & user monitors
 exports.MONITOR_TYPES = {
     USER_DATA: 'USER_DATA',
     BOOK: 'BOOK',
-    CANDLES: 'CANDLES',
     ...USER_MONITOR_TYPES,
 }
 
@@ -24,6 +24,7 @@ exports.getMonitorTypes = _ => {
             monitorTypesArray.map(type => ({
                 type,
                 systemOnly: !userMonitorTypesArray.includes(type),
+                default: type === this.MONITOR_TYPES.CANDLES,
             }))
         )
     })

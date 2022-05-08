@@ -78,7 +78,7 @@ module.exports = settings => {
         terminateBookStream: symbol => privateAPI.websockets.terminate(`${symbol.toLowerCase()}@bookTicker`),
         terminateChartStream: (symbol, interval) =>
             publicAPI.websockets.terminate(`${symbol.toLowerCase()}@kline_${interval}`),
-        terminateTickerStrem: (symbol) => publicAPI.websockets.terminate(`${symbol.toLowerCase()}@ticker`),
+        terminateTickerStream: (symbol) => publicAPI.websockets.terminate(`${symbol.toLowerCase()}@ticker`),
 
     }
 }
