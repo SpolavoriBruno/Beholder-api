@@ -11,6 +11,7 @@ router.use('/symbols', authMiddleware, require('./symbolsRouter'))
 router.use('/exchange', authMiddleware, require('./exchangeRouter'))
 router.use('/orders', authMiddleware, require('./ordersRouter'))
 router.use('/monitors', authMiddleware, require('./monitorRouter'))
+router.use('/automations', authMiddleware, require('./automationRouter'))
 router.use('/beholder', authMiddleware, require('./beholderRouter'))
 
 module.exports = router;
