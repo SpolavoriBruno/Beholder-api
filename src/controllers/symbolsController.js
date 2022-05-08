@@ -1,5 +1,5 @@
 const { getSymbols, getSymbol, updateSymbol, searchSymbols } = require('../repositories/symbolsRepository')
-const logger = require('../utils/logger')
+const errorHandler = require('../utils/errorHandler')
 
 exports.getSymbols = (req, res) => {
 
@@ -13,20 +13,14 @@ exports.getSymbols = (req, res) => {
 
     result
         .then(data => res.json(data))
-        .catch(error => {
-            logger.error(error)
-            res.status(500).json(error)
-        })
+        .catch(e => errorHandler(e, (s, b) => res.status(s).json(b)))
 }
 
 exports.getSymbol = (req, res) => {
     const symbol = req.params.symbol
     getSymbol(symbol)
         .then(symbol => res.json(symbol))
-        .catch(error => {
-            logger.error(error)
-            res.status(500).json(error)
-        })
+        .catch(e => errorHandler(e, (s, b) => res.status(s).json(b)))
 }
 
 exports.updateSymbol = (req, res) => {
@@ -35,10 +29,7 @@ exports.updateSymbol = (req, res) => {
 
     updateSymbol(symbol, newSymbolData)
         .then(() => res.sendStatus(200))
-        .catch(error => {
-            logger.error(error)
-            res.status(500).json(error)
-        })
+        .catch(e => errorHandler(e, (s, b) => res.status(s).json(b)))
 }
 
 exports.syncSymbols = async (req, res) => {
@@ -49,7 +40,9 @@ exports.syncSymbols = async (req, res) => {
     const settings = await getDecryptedSettings(res.locals.token.id)
 
     const { exchangeInfo } = require('../utils/exchange')(settings.get({ plain: true }))
+    // TODO: ckeck if exchangeInfo is used in somewhere else
     exchangeInfo()
+        // move it in exchangeInfo ?
         .then(data => data.symbols.map(item => {
             const getSymbolFilter = (filter, collection) => collection.find(f => f.filterType === filter)
 
@@ -72,4 +65,5 @@ exports.syncSymbols = async (req, res) => {
             await bulkInsert(symbols)
             res.sendStatus(201)
         })
+        .catch(e => errorHandler(e, (s, b) => res.status(s).json(b)))
 }

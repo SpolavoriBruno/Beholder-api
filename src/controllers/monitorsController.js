@@ -1,25 +1,28 @@
-const { deleteMonitor, getMonitor, getMonitors, insertMonitor, updateMonitor, getMonitorTypes, MONITOR_TYPES } = require('../repositories/monitorsRepository')
+const { deleteMonitor, getMonitor,
+    getMonitors, insertMonitor,
+    updateMonitor, getMonitorTypes
+} = require('../repositories/monitorsRepository')
 const appEM = require('../app-em')
+const errorHandler = require('../utils/errorHandler')
 
 exports.getMonitor = (req, res, next) => {
     const id = req.params.id
     getMonitor(id)
         .then(monitor => res.json(monitor.get({ plain: true })))
-        .catch(next)
-
+        .catch(e => errorHandler(e, (s, b) => res.status(s).json(b)))
 }
 
 exports.getMonitors = (req, res, next) => {
     const page = req.query.page
     getMonitors(page)
         .then(monitors => res.json(monitors))
-        .catch(next)
+        .catch(e => errorHandler(e, (s, b) => res.status(s).json(b)))
 }
 
 exports.getMonitorTypes = (req, res, next) => {
     getMonitorTypes()
         .then(monitorTypes => res.json(monitorTypes))
-        .catch(next)
+        .catch(e => errorHandler(e, (s, b) => res.status(s).json(b)))
 }
 
 exports.startMonitor = async (req, res, next) => {
@@ -57,10 +60,7 @@ exports.insertMonitor = (req, res, next) => {
             }
             res.json(monitor.get({ plain: true }))
         })
-        .catch(error => {
-            console.log(error)
-            res.status(error.status).json(error.body)
-        })
+        .catch(e => errorHandler(e, (s, b) => res.status(s).json(b)))
 }
 
 exports.updateMonitor = async (req, res, next) => {
@@ -82,10 +82,7 @@ exports.updateMonitor = async (req, res, next) => {
             }
             res.json(monitor.get({ plain: true }))
         })
-        .catch(error => {
-            console.log(error)
-            res.status(500).json(error.body)
-        })
+        .catch(e => errorHandler(e, (s, b) => res.status(s).json(b)))
 }
 
 exports.deleteMonitor = async (req, res, next) => {
@@ -100,8 +97,5 @@ exports.deleteMonitor = async (req, res, next) => {
 
     deleteMonitor(id)
         .then(monitor => res.sendStatus(204))
-        .catch(error => {
-            console.log(error)
-            res.status(500).json(error.body)
-        })
+        .catch(e => errorHandler(e, (s, b) => res.status(s).json(b)))
 }

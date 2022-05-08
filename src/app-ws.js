@@ -2,6 +2,7 @@ const Websockets = require('ws')
 const jwt = require('jsonwebtoken')
 const { isBlacklisted } = require('./controllers/authController')
 const logger = require('./utils/logger')
+const errorHandler = require('./utils/errorHandler')
 
 function onMessage(data) {
     logger.log(data)
@@ -30,7 +31,7 @@ function verifyClient(info, callback) {
             if (decoded && !isBlacklisted(token))
                 return callback(true)
         } catch (error) {
-            logger.error(error)
+            errorHandler(error)
         }
     }
     return callback(false, 401)

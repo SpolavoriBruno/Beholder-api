@@ -1,15 +1,12 @@
 const { getSettings, updateSettings } = require('../repositories/settingsRepository')
-const logger = require('../utils/logger')
+const errorHandler = require('../utils/errorHandler')
 
 exports.getSettings = (req, res, next) => {
     const id = res.locals.token.id
 
     getSettings(id)
         .then(settings => res.json(settings))
-        .catch(error => {
-            logger.err(error)
-            res.sendStatus(500)
-        })
+        .catch(e => errorHandler(e, (s, b) => res.status(s).json(b)))
 }
 
 exports.updateSettings = async (req, res, next) => {
@@ -17,6 +14,7 @@ exports.updateSettings = async (req, res, next) => {
     const newSettings = req.body
 
     await updateSettings(id, newSettings)
+        .catch(e => errorHandler(e, (s, b) => res.status(s).json(b)))
 
     res.sendStatus(200)
 }

@@ -1,4 +1,5 @@
 const { getDecryptedSettings } = require('../repositories/settingsRepository')
+const errorHandler = require('../utils/errorHandler')
 
 exports.getBalance = async (req, res) => {
     const id = res.locals.token.id
@@ -8,5 +9,5 @@ exports.getBalance = async (req, res) => {
 
     balance()
         .then(data => res.json(data))
-        .catch(err => res.status(500).json(err))
+        .catch(e => errorHandler(e, (s, b) => res.status(s).json(b)))
 }

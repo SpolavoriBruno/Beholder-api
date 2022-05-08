@@ -5,6 +5,7 @@ const app = require('../src/app')
 const appEM = require('../src/app-em')
 const appWS = require('../src/app-ws')
 const logger = require('../src/utils/logger')
+const errorHandler = require('../src/utils/errorHandler')
 const { getDefaultSettings } = require('../src/repositories/settingsRepository')
 
 const port = process.env.PORT || 3000
@@ -20,5 +21,5 @@ getDefaultSettings()
 
         appEM.init(settings, beholder, wss)
     })
-    .catch(error => logger.error(error))
+    .catch(errorHandler)
 
