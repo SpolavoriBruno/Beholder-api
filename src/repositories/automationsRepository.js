@@ -27,7 +27,7 @@ exports.automationExists = async (name, symbol) => {
     return count > 0
 }
 
-exports.deleteAutomation = id => automationModel.destroy({ where: { id, isSystemMon: false } })
+exports.deleteAutomation = id => automationModel.destroy({ where: { id } })
 
 exports.updateAutomation = async (id, newAutomation) => {
     const currentAutomation = await this.getAutomation(id)
