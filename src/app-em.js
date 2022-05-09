@@ -53,24 +53,20 @@ function processExecutionData(executionData, broadcastLabel) {
 async function loadWallet(exchange) {
     if (!exchange) throw new Error('Exchange is not initialized')
 
-    try {
-        const info = await exchange.balance()
+    const info = await exchange.balance()
 
-        // TODO: info is not defined | 'balanceData error' in binance lib?
-        const wallet = Object.entries(info || []).map(item => {
+    const wallet = Object.entries(info || []).map(item => {
 
-            beholder.updateMemory(item[0], MEMORY_KEYS.WALLET, null, parseFloat(item[1].available))
+        beholder.updateMemory(item[0], MEMORY_KEYS.WALLET, null, parseFloat(item[1].available))
 
-            return {
-                symbol: item[0],
-                avaliable: item[1].available,
-                onOrder: item[1].onOrder,
-            }
-        })
-        return wallet
-    } catch (error) {
+        return {
+            symbol: item[0],
+            avaliable: item[1].available,
+            onOrder: item[1].onOrder,
+        }
+    })
+    return wallet
 
-    }
 }
 
 function sanatizeTicker(data) {

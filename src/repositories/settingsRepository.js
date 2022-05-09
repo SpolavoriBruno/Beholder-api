@@ -31,7 +31,7 @@ exports.updateSettings = async (id, newSettings) => {
     await currentSettings.save()
 }
 
-exports.getDefaultSettings = () => settingsModel.findOne()
+exports.getDefaultSettings = () => this.getDecryptedSettings(process.env.DEFAULT_SETTINGS_ID)
 
 exports.getDecryptedSettings = async (id) => {
     let settings = settingsCache[id]
