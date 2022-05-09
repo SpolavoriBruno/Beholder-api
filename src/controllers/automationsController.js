@@ -81,10 +81,10 @@ exports.updateAutomation = async (req, res) => {
 exports.deleteAutomation = async (req, res) => {
     const id = req.params.id
 
-    const currentAutomation = await getAutomation(id)
+    const automation = await getAutomation(id)
 
     if (!automation) return res.sendStatus(404)
-    if (currentAutomation.isActive) {
+    if (automation.isActive) {
         // clean beholder brain
     }
 
