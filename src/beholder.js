@@ -100,7 +100,6 @@ exports.getMemoryIndexes = (symbol, index, interval) => {
         if (a.variable > b.variable) return 1
         return 0
     }).filter(item => {
-        console.log('exist symbol', !!symbol)
         if (symbol) return item.symbol === symbol
         return true
     })
