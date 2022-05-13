@@ -33,6 +33,7 @@ const automationModel = db.define('automation', {
         type: Sequelize.BOOLEAN,
         allowNull: false,
     },
+    coolDown: Sequelize.STRING,
     createdAt: Sequelize.DATE,
     updatedAt: Sequelize.DATE
 }, {

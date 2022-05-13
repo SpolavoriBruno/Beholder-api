@@ -44,6 +44,9 @@ exports.updateAutomation = async (id, newAutomation) => {
     if (newAutomation.conditions && newAutomation.conditions !== currentAutomation.conditions)
         currentAutomation.conditions = newAutomation.conditions
 
+    if (newAutomation.coolDown && newAutomation.coolDown !== currentAutomation.coolDown)
+        currentAutomation.coolDown = newAutomation.coolDown
+
     if (newAutomation.isActive !== undefined && newAutomation.isActive !== currentAutomation.isActive)
         currentAutomation.isActive = newAutomation.isActive
 
