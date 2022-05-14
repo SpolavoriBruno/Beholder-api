@@ -2,8 +2,12 @@ const { deleteAutomation, getAutomation,
     getAutomations, insertAutomation,
     updateAutomation, getAutomationTypes
 } = require('../repositories/automationsRepository')
+const { updateBrain, deleteBrain } = require('../beholder')
 const errorHandler = require('../utils/errorHandler')
 const logger = require('../utils/logger')
+
+const validateConditions = conditions =>
+    /^(MEMORY\[\'[a-z0-9:_]+?\'\](\.[a-z]+)?[><=!]+([0-9\.\-]+?|(\'[a-z:_]+?\')|MEMORY\[\'[a-z0-9:_]+?\'\](\.[a-z]+)?)( && )?)+$/i.test(conditions)
 
 exports.startAutomation = async (req, res) => {
     const id = req.params.id
@@ -11,12 +15,11 @@ exports.startAutomation = async (req, res) => {
     if (!automation) return res.sendStatus(404)
     if (automation.isActive) return res.sendStatus(204)
 
-    // update beholder brain
-
     automation.isActive = true
     await automation.save()
 
     res.json(automation)
+    updateBrain(automation.get({ plain: true }))
     if (automation.logs) logger.info(`Automation ${automation.name} started`)
 }
 
@@ -26,14 +29,12 @@ exports.stopAutomation = async (req, res) => {
     if (!automation) return res.sendStatus(404)
     if (!automation.isActive) return res.sendStatus(204)
 
-    // update beholder brain
-
     automation.isActive = false
     await automation.save()
 
     res.json(automation)
+    deleteBrain(automation.get({ plain: true }))
     if (automation.logs) logger.info(`Automation ${automation.name} stoped`)
-
 }
 
 exports.getAutomation = (req, res) => {
@@ -52,10 +53,14 @@ exports.getAutomations = (req, res) => {
 
 exports.insertAutomation = (req, res) => {
     const newAutomation = req.body
+
+    if (!validateConditions(newAutomation.conditions))
+        return res.status(400).json(`Invalid conditions`)
+
     insertAutomation(newAutomation)
         .then(automation => {
             if (automation.isActive) {
-                // update beholder brain
+                updateBrain(automation.get({ plain: true }))
             }
             res.status(201).json(automation)
         })
@@ -66,12 +71,16 @@ exports.updateAutomation = async (req, res) => {
     const id = req.params.id
     const newAutomation = req.body
 
+    if (!validateConditions(newAutomation.conditions))
+        return res.status(400).json(`Invalid conditions`)
+
     updateAutomation(id, newAutomation)
         .then(automation => {
             if (automation.isActive) {
-                // update beholder brain
+                deleteBrain(automation.get({ plain: true }))
+                updateBrain(automation.get({ plain: true }))
             } else {
-                // update beholder brain
+                deleteBrain(automation.get({ plain: true }))
             }
             res.json(automation)
         })
@@ -84,9 +93,8 @@ exports.deleteAutomation = async (req, res) => {
     const automation = await getAutomation(id)
 
     if (!automation) return res.sendStatus(404)
-    if (automation.isActive) {
-        // clean beholder brain
-    }
+    if (automation.isActive)
+        deleteBrain(automation.get({ plain: true }))
 
     deleteAutomation(id)
         .then(_ => res.sendStatus(204))
