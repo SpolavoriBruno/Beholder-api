@@ -116,14 +116,14 @@ exports.deleteMemory = (symbol, index, interval) => {
     if (LOGS) logger.info(`Beholder Memory Delete - ${memoryKey}`)
 }
 
-exports.updateMemory = (symbol, index, interval, value) => {
+exports.updateMemory = (symbol, index, interval, value, executeAutomation = true) => {
     while (lockMemory);
     const memoryKey = getMemoryKey(symbol, index, interval)
 
     MEMORY[memoryKey] = value
 
-    if (LOGS) logger.info(`Beholder Memory Update - ${memoryKey}`, value)
-    processBrain(memoryKey)
+    LOGS && logger.info(`Beholder Memory Update - ${memoryKey}`, value)
+    executeAutomation && processBrain(memoryKey)
 }
 
 const processBrain = memoryKey => {

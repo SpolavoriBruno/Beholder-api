@@ -202,8 +202,8 @@ function startChartMonitor(symbol, interval, indexes, broadcastLabel, logs) {
 
         beholder.updateMemory(symbol, MEMORY_KEYS.LAST_CANDLE, interval, lastCandle)
 
-        processIndexes(indexes, interval, ohlc, (index, result) => {
-            beholder.updateMemory(symbol, index, interval, result)
+        processIndexes(indexes, ohlc, (index, result, exec) => {
+            beholder.updateMemory(symbol, index, interval, result, exec)
         })
     })
     logger.info(`Start Chart Monitor - ${symbol}.${broadcastLabel}`)
@@ -310,13 +310,11 @@ exports.init = async (settings, beholderInstance, wssInstance) => {
     exchange = require('./utils/exchange')(settings)
     if (!exchange) throw new Error('Exchange is not initialized')
 
-
     const monitors = await getActiveMonitors()
-    monitors.map(monitor => {
+    monitors.map(monitor =>
         setTimeout(() => {
             this.startMonitor(monitor)
-        }, 300)
-    })
+        }, 300))
 
     logger.info("Exchange Monitor is running")
 }
