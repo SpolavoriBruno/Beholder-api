@@ -27,8 +27,8 @@ exports.insertAutomation = async (newAutomation, transaction) => {
     return automationModel.create(newAutomation, { transaction })
 }
 
-exports.automationExists = async (name, symbol) => {
-    const count = await automationModel.count({ where: { name, symbol } })
+exports.automationExists = async (name) => {
+    const count = await automationModel.count({ where: { name } })
     return count > 0
 }
 
