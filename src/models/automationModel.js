@@ -1,6 +1,7 @@
 const { QueryError } = require('sequelize')
 const Sequelize = require('sequelize')
 const db = require('../db')
+const actionModel = require('./actionModel')
 
 const automationModel = db.define('automation', {
     id: {
@@ -41,6 +42,11 @@ const automationModel = db.define('automation', {
         fields: ['symbol', 'name'],
         unique: true
     }]
+})
+
+automationModel.hasMany(actionModel, {
+    foreignKey: 'automationId',
+    onDelete: 'CASCADE'
 })
 
 module.exports = automationModel

@@ -1,25 +1,30 @@
+const actionModel = require('../models/actionModel')
 const automationModel = require('../models/automationModel')
 
 const PAGE_SIZE = 10
 
-exports.getActiveAutomations = _ => automationModel.findAll({ where: { isActive: true } })
+exports.getActiveAutomations = _ => automationModel.findAll({
+    where: { isActive: true },
+    include: actionModel
+})
 
-exports.getAutomation = id => automationModel.findByPk(id)
+exports.getAutomation = id => automationModel.findByPk(id, { include: actionModel })
 
 exports.getAutomations = (page = 1) => automationModel.findAndCountAll({
     where: {},
+    include: actionModel,
     order: [['isActive', 'DESC'], ['symbol', 'ASC'], ['name', 'ASC']],
     limit: PAGE_SIZE,
     offset: PAGE_SIZE * (page - 1)
 })
 
-exports.insertAutomation = async newAutomation => {
+exports.insertAutomation = async (newAutomation, transaction) => {
 
     const alreadyExists = await this.automationExists(newAutomation.name, newAutomation.symbol)
     if (alreadyExists)
         return Promise.reject({ status: 409, body: 'Automation already exists' })
 
-    return automationModel.create(newAutomation)
+    return automationModel.create(newAutomation, { transaction })
 }
 
 exports.automationExists = async (name, symbol) => {
