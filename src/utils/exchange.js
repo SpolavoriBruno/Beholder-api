@@ -1,13 +1,15 @@
 const Binance = require('node-binance-api')
 const logger = require('../utils/logger')
 
+const LOGS = process.env.LOGS === 'true'
+
 module.exports = settings => {
     if (!settings) throw new Error('Settings are required to connect to exchange')
     if (!settings.apiUrl) throw new Error('API URL is required to connect to exchange')
     if (!settings.streamUrl) throw new Error('Stream URL is required to connect to exchange')
 
     function formatUrl(url) {
-        return url.endsWith('/') ? url : `${url}/`
+        return typeof url === 'string' && url.endsWith('/') ? url : `${url}/`
     }
 
     const privateAPI = new Binance({
@@ -24,7 +26,7 @@ module.exports = settings => {
     return {
         balance: () => privateAPI.balance(),
 
-        exchangeInfo: () => privateAPI.exchangeInfo(),
+        exchangeInfo: () => publicAPI.exchangeInfo(),
 
         cancel: (symbol, orderId) => privateAPI.cancel(symbol, orderId),
 
@@ -55,11 +57,15 @@ module.exports = settings => {
                 subscribedData => logger.log(`UserDataStream - Subscribed: ${subscribedData}`)
             ),
 
-        chartStream: (symbol, interval, callback) =>
-            publicAPI.websockets.chart(symbol, interval, (symbol, interval, chart) => {
+        chartStream: (symbol, interval, callback) => {
+            const streamURL = publicAPI.websockets.chart(symbol, interval, (s, i, chart) => {
+                const tick = publicAPI.last(chart)
+                if (tick && chart[tick]?.isFinal === false) return
                 const ohlc = publicAPI.ohlc(chart)
                 callback(ohlc)
-            }),
+            })
+            if (LOGS) logger.info(`ChartStream Connected: ${streamURL}`)
+        },
 
         bookStream: (symbol, callback) => {
             if (symbol) privateAPI.websockets.bookTickers(symbol, callback)
@@ -73,12 +79,14 @@ module.exports = settings => {
 
         tickerStream: (symbol, callback) =>
             publicAPI.websockets.prevDay(symbol, (data, converted) => callback(converted)),
-
-        terminateMiniTickerStream: symbol => privateAPI.websockets.terminate(`${symbol.toLowerCase()}@miniTicker`),
-        terminateBookStream: symbol => privateAPI.websockets.terminate(`${symbol.toLowerCase()}@bookTicker`),
+        terminateMiniTickerStream: symbol =>
+            privateAPI.websockets.terminate(`${symbol.toLowerCase()}@miniTicker`),
+        terminateBookStream: symbol =>
+            privateAPI.websockets.terminate(`${symbol.toLowerCase()}@bookTicker`),
         terminateChartStream: (symbol, interval) =>
             publicAPI.websockets.terminate(`${symbol.toLowerCase()}@kline_${interval}`),
-        terminateTickerStream: (symbol) => publicAPI.websockets.terminate(`${symbol.toLowerCase()}@ticker`),
+        terminateTickerStream: (symbol) =>
+            publicAPI.websockets.terminate(`${symbol.toLowerCase()}@ticker`),
 
     }
 }
