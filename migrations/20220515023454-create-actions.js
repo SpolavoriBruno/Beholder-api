@@ -15,7 +15,8 @@ module.exports = {
                 references: {
                     model: 'automations',
                     key: 'id'
-                }
+                },
+                onDelete: 'CASCADE'
             },
             type: {
                 type: Sequelize.STRING,
