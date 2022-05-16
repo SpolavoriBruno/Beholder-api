@@ -67,7 +67,6 @@ exports.insertAutomation = async (req, res) => {
 
     const transaction = await db.transaction()
 
-    // delete newAutomation.actions
     insertAutomation(newAutomation, transaction)
         .then(async automation => {
             let actions
@@ -76,7 +75,6 @@ exports.insertAutomation = async (req, res) => {
                     action.automationId = automation.id
                     return action
                 })
-                console.log(actions)
 
                 await insertActions(actions, transaction)
             } catch (error) {
@@ -85,7 +83,6 @@ exports.insertAutomation = async (req, res) => {
             }
 
             automation = automation.get({ plain: true })
-            // automation.actions = actions.map(action => action.get({ plain: true }))
 
             if (automation.isActive) {
                 updateBrain(automation)
