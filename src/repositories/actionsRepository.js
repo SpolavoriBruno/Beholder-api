@@ -1,6 +1,6 @@
 const actionModel = require('../models/actionModel')
 
-const ACTIONS_EMAIL = {
+exports.ACTIONS_TYPE = {
     ALERT_EMAIL: 'ALERT_EMAIL',
     ALERT_SMS: 'ALERT_SMS',
     ORDER: 'ORDER',
