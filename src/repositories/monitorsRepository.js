@@ -57,8 +57,6 @@ exports.monitorExists = async (type, symbol, interval) => {
     const count = await monitorModel.count({ where: { type, symbol, interval } })
     return count > 0
 }
-
-
 exports.updateMonitor = async (id, newMonitor) => {
     const currentMonitor = await this.getMonitor(id)
 

@@ -40,5 +40,3 @@ exports.doLogout = (req, res, next) => {
 }
 
 exports.isBlacklisted = token => blacklist.some(t => t === token)
-
-

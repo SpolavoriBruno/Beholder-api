@@ -45,8 +45,6 @@ function broadcast(jsonObject) {
         }
     })
 }
-
-
 module.exports = server => {
     const wss = new Websockets.Server({
         server,

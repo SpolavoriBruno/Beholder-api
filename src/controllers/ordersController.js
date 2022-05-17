@@ -65,8 +65,6 @@ exports.cancelOrder = async (req, res, next) => {
 
     res.json(order.get({ plain: true }))
 }
-
-
 exports.syncOrder = async (req, res, next) => {
     const id = res.locals.token.id
     const settings = await getDecryptedSettings(id)

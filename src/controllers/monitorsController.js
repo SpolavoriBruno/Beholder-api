@@ -70,8 +70,6 @@ exports.updateMonitor = async (req, res, next) => {
     const currentMonitor = await getMonitor(id)
     if (!currentMonitor) return res.sendStatus(404)
     if (currentMonitor.isSystemMon) return res.sendStatus(403)
-
-
     updateMonitor(id, newMonitor)
         .then(monitor => {
             if (monitor.isActive) {
