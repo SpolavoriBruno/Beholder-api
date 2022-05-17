@@ -24,7 +24,7 @@
   "main": "src/server",
   "scripts": {
     "start": "node -r dotenv/config bin/server",
-    "dev": "nodemon -r dotenv/config bin/server",
+    "dev": "nodemon --trace-uncaught -r dotenv/config bin/server",
     "db:create": "sequelize-cli db:create",
     "db:migrate": "sequelize-cli db:migrate",
     "db:roll": "sequelize-cli db:migrate:undo:all",
