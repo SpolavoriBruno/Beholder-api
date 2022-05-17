@@ -9,24 +9,40 @@ exports.getSettings = id => settingsModel.findOne({ where: { id } })
 
 exports.updateSettings = async (id, newSettings) => {
     const currentSettings = await this.getSettings(id)
+    this.clearSettingsCache(id)
 
-    if (newSettings.email !== currentSettings.email)
+    if (newSettings.email && newSettings.email !== currentSettings.email)
         currentSettings.email = newSettings.email
 
     if (newSettings.password)
         currentSettings.password = hashPassword(newSettings.password)
 
-    if (newSettings.apiUrl !== currentSettings.apiUrl)
+    if (newSettings.phone && newSettings.phone !== currentSettings.phone)
+        currentSettings.phone = newSettings.phone
+
+    if (newSettings.apiUrl && newSettings.apiUrl !== currentSettings.apiUrl)
         currentSettings.apiUrl = newSettings.apiUrl
 
-    if (newSettings.streamUrl !== currentSettings.streamUrl)
+    if (newSettings.streamUrl && newSettings.streamUrl !== currentSettings.streamUrl)
         currentSettings.streamUrl = newSettings.streamUrl
 
-    if (newSettings.accessKey !== currentSettings.accessKey)
+    if (newSettings.accessKey && newSettings.accessKey !== currentSettings.accessKey)
         currentSettings.accessKey = newSettings.accessKey
+
+    if (newSettings.twilioSid && newSettings.twilioSid !== currentSettings.twilioSid)
+        currentSettings.twilioSid = newSettings.twilioSid
+
+    if (newSettings.twilioPhone && newSettings.twilioPhone !== currentSettings.twilioPhone)
+        currentSettings.twilioPhone = newSettings.twilioPhone
 
     if (newSettings.secretKey)
         currentSettings.secretKey = encrypt(newSettings.secretKey)
+
+    if (newSettings.sendGridKey)
+        currentSettings.sendGridKey = encrypt(newSettings.sendGridKey)
+
+    if (newSettings.twilioToken)
+        currentSettings.twilioToken = encrypt(newSettings.twilioToken)
 
     await currentSettings.save()
 }
@@ -39,6 +55,9 @@ exports.getDecryptedSettings = async (id) => {
     if (!settings) {
         settings = await this.getSettings(id)
         settings.secretKey = decrypt(settings.secretKey)
+        settings.sendGridKey && (settings.sendGridKey = decrypt(settings.sendGridKey))
+        settings.twilioToken && (settings.twilioToken = decrypt(settings.twilioToken))
+
         settingsCache[id] = settings
     }
 
