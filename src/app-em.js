@@ -37,10 +37,14 @@ function processExecutionData(executionData, broadcastLabel) {
 
     setTimeout(() => {
         updateOrderByOrderId(order.orderId, order.clientOrderId, order)
-            .then(order => {
-                if (order) {
+            .then(_order => {
+                if (_order) {
 
-                    beholder.updateMemory(order.symbol, MEMORY_KEYS.LAST_ORDER, null, order)
+                    beholder.updateMemory({
+                        symbol: order.symbol,
+                        index: MEMORY_KEYS.LAST_ORDER,
+                        value: order
+                    }, r => WSS.broadcast({ notification: r }))
 
                     if (broadcastLabel && WSS)
                         WSS.broadcast({ [broadcastLabel]: order })
@@ -55,9 +59,12 @@ async function loadWallet(exchange) {
 
     const info = await exchange.balance()
 
-    const wallet = Object.entries(info || []).map(item => {
-
-        beholder.updateMemory(item[0], MEMORY_KEYS.WALLET, null, parseFloat(item[1].available))
+    return Object.entries(info || []).map(item => {
+        beholder.updateMemory({
+            symbol: item[0],
+            index: MEMORY_KEYS.WALLET,
+            value: parseFloat(item[1].available)
+        }, r => WSS.broadcast({ notification: r }))
 
         return {
             symbol: item[0],
@@ -65,8 +72,6 @@ async function loadWallet(exchange) {
             onOrder: item[1].onOrder,
         }
     })
-    return wallet
-
 }
 
 function sanatizeTicker(data) {
@@ -103,8 +108,6 @@ function startUserDataMonitor(broadcastLabel, logs) {
 
     const [balanceBroadcast, executionBroadcast] = broadcastLabel ? broadcastLabel.split(',') : [null, null]
 
-    loadWallet(exchange)
-
     exchange.userDataStream(
         _ => {
             const wallet = loadWallet(exchange)
@@ -135,7 +138,11 @@ function startMiniTickerMonitor(symbol, broadcastLabel, logs) {
 
                 const converted = {}
                 Object.entries(market[1]).map(prop => converted[prop[0]] = parseFloat(prop[1]))
-                beholder.updateMemory(market[0], MEMORY_KEYS.MINI_TICKER, null, converted)
+                beholder.updateMemory({
+                    symbol: market[0],
+                    value: converted,
+                    index: MEMORY_KEYS.MINI_TICKER,
+                }, r => WSS.broadcast({ notification: r }))
             })
         })
     } catch (error) {
@@ -171,8 +178,11 @@ function startBookMonitor(symbol, broadcastLabel, logs) {
         delete orderCopy.updatedId
         const converted = {}
         Object.entries(orderCopy).map(prop => converted[prop[0]] = parseFloat(prop[1]))
-        beholder.updateMemory(order.symbol, MEMORY_KEYS.BOOK, null, converted)
-
+        beholder.updateMemory({
+            symbol: order.symbol,
+            index: MEMORY_KEYS.BOOK,
+            value: converted,
+        }, r => WSS.broadcast({ notification: r }))
     })
     logger.info(`Start Book Monitor - ${broadcastLabel}`)
 }
@@ -188,8 +198,10 @@ function stopBookMonitor(symbol) {
 function startChartMonitor(symbol, interval, indexes, broadcastLabel, logs) {
     if (!exchange) throw new Error('Exchange is not initialized')
     if (!symbol) return new Error('Cant start chart monitor without symbol')
+    if (!interval) return new Error('Cant start chart monitor without interval')
+    if (!indexes) return
 
-    exchange.chartStream(symbol, interval || '1m', ohlc => {
+    exchange.chartStream(symbol, interval, ohlc => {
         const lastCandle = {
             open: ohlc.open[ohlc.open.length - 1],
             close: ohlc.close[ohlc.close.length - 1],
@@ -199,15 +211,21 @@ function startChartMonitor(symbol, interval, indexes, broadcastLabel, logs) {
 
         if (logs) logger.info(`Chart Monitor - ${broadcastLabel}`, lastCandle)
         if (broadcastLabel && WSS) WSS.broadcast({ [broadcastLabel]: lastCandle })
+        beholder.updateMemory({
+            symbol, interval,
+            value: lastCandle,
+            index: MEMORY_KEYS.LAST_CANDLE,
+        }, r => WSS.broadcast({ notification: r }))
 
-        beholder.updateMemory(symbol, MEMORY_KEYS.LAST_CANDLE, interval, lastCandle)
-
-        processIndexes(indexes, ohlc, (index, result, exec) => {
-            beholder.updateMemory(symbol, index, interval, result, exec)
+        processIndexes(indexes, ohlc, (index, value, process) => {
+            beholder.updateMemory(
+                { symbol, index, interval, value, process },
+                r => {
+                    WSS.broadcast({ notification: r })
+                })
         })
     })
     logger.info(`Start Chart Monitor - ${symbol}.${broadcastLabel}`)
-
 }
 
 function stopChartMonitor(symbol, interval, indexes, logs) {
@@ -236,7 +254,11 @@ function startTickerMonitor(symbol, broadcastLabel, logs) {
             newMemory.previous = currentMemory ? currentMemory.current : ticker
             newMemory.current = ticker
 
-            beholder.updateMemory(data.symbol, MEMORY_KEYS.TICKER, null, newMemory)
+            beholder.updateMemory({
+                symbol: data.symbol,
+                index: MEMORY_KEYS.TICKER,
+                value: newMemory
+            }, r => WSS.broadcast({ notification: r }))
 
             if (broadcastLabel && WSS) WSS.broadcast({ [broadcastLabel]: data })
 

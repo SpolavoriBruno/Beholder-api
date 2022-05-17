@@ -1,8 +1,10 @@
 const { getActiveAutomations } = require('./repositories/automationsRepository')
 const { getDefaultSettings } = require('./repositories/settingsRepository')
 const { MONITOR_TYPES } = require('./repositories/monitorsRepository')
+const { ACTIONS_TYPE } = require('./repositories/actionsRepository')
 const { INDEX_KEYS } = require('./utils/indexes')
 const logger = require('./utils/logger')
+const { sleep } = require('./utils/time')
 
 const MEMORY = {}
 let lockMemory = false
@@ -56,9 +58,9 @@ exports.MEMORY_KEYS = {
 }
 
 exports.init = async _ => {
-    while (lockBrain);
     const automations = await getActiveAutomations()
     try {
+        while (lockBrain) await sleep(100)
         lockBrain = true
         lockMemory = true
 
@@ -67,7 +69,7 @@ exports.init = async _ => {
     } finally {
         lockBrain = false
         lockMemory = false
-        console.info('Beholder Brain Initialized')
+        logger.info('Beholder Brain Initialized')
     }
 }
 
@@ -86,8 +88,9 @@ const updateBrainIndex = (index, id) => {
     BRAIN_INDEX[index].push(id)
 }
 
-exports.deleteBrain = automation => {
+exports.deleteBrain = async automation => {
     try {
+        while (lockBrain) await sleep(100)
         lockBrain = true
         delete BRAIN[automation.id]
         deleteBrainIndex(automation.indexes, automation.id)
@@ -116,24 +119,24 @@ exports.deleteMemory = (symbol, index, interval) => {
     if (LOGS) logger.info(`Beholder Memory Delete - ${memoryKey}`)
 }
 
-exports.updateMemory = (symbol, index, interval, value, executeAutomation = true) => {
-    while (lockMemory);
+exports.updateMemory = async ({ symbol, index, interval, value, process = true }, cb) => {
+    while (lockMemory) await sleep(100)
     const memoryKey = getMemoryKey(symbol, index, interval)
 
     MEMORY[memoryKey] = value
 
     LOGS && logger.info(`Beholder Memory Update - ${memoryKey}`, value)
-    executeAutomation && processBrain(memoryKey)
+    if (process) processBrain(memoryKey, cb)
 }
 
-const processBrain = memoryKey => {
-    while (lockBrain);
+const processBrain = async (memoryKey, cb) => {
     try {
         const automations = findAutomations(memoryKey)
-        if (automations.length && !lockBrain) {
+        if (automations.length) {
+            while (lockBrain) await sleep(100)
             lockBrain = true
 
-            automations.map(evalDecision)
+            automations.map(auto => evalDecision(auto, cb))
         }
     } finally {
         lockBrain = false
@@ -166,25 +169,44 @@ const isColdAutomation = automationId => {
 }
 
 // TODO: refactor
-const evalDecision = automation => {
-
-    const indexes = automation.indexes.split(',')
+const evalDecision = (automation, cb) => {
+    if (!automation) return
+    const indexes = automation.indexes ? automation.indexes.split(',') : []
     const isChecked = indexes.every(index => MEMORY[index] !== null && MEMORY[index] !== undefined)
-    if (!isChecked) return false
+    if (!isChecked) return
 
     const isValid = eval(automation.conditions)
-    if (!isValid) return false
+    if (!isValid) return
 
-    if (!isColdAutomation(automation.id)) return false
+    if (!isColdAutomation(automation.id)) return
     lastExecution[automation.id] = Date.now()
 
-
-    if (!automation.actions) {
+    if (!automation.actions || !automation.actions.length) {
         if (LOGS || automation.logs) logger.info(`Beholder decide to execute, but hasn't actions - ${automation.id}`)
-        return false
+        return
     }
-    const settings = getDefaultSettings(automation.settings)
-    // for each action, execute it
+    if (LOGS || automation.logs) logger.info(`Beholder decide to execute - ${automation.id}`)
+
+    getDefaultSettings().then(settings => {
+        automation.actions.map(action => {
+            const result = doAction(settings, action, automation)
+            if (result && typeof cb === 'function') cb(result)
+        })
+    })
+}
+
+function doAction(settings, action, automation) {
+    try {
+        switch (action.type) {
+            case ACTIONS_TYPE.ORDER: return { type: 'success', text: 'Order Executed' }
+            case ACTIONS_TYPE.ALERT_SMS: return { type: 'success', text: 'SMS Sent' }
+            case ACTIONS_TYPE.ALERT_EMAIL: return { type: 'success', text: 'Email Sent' }
+        }
+    } catch (error) {
+        if (LOGS || automation.logs) {
+            logger.error(`Error on execution of - ${automation.name}:${action.type}`, error)
+        }
+    }
 }
 
 const findAutomations = memoryKey => {
