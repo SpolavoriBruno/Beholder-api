@@ -1,4 +1,4 @@
-const orderModel = require('../models/ordersModel')
+const orderModel = require('../models/orderModel')
 const Sequelize = require('sequelize')
 
 const PAGE_SIZE = 10
