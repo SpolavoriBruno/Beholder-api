@@ -188,25 +188,42 @@ const evalDecision = (automation, cb) => {
     if (LOGS || automation.logs) logger.info(`Beholder decide to execute - ${automation.id}`)
 
     getDefaultSettings().then(settings => {
-        automation.actions.map(action => {
-            const result = doAction(settings, action, automation)
+        automation.actions.map(async action => {
+            const result = await doAction(settings, action, automation)
             if (result && typeof cb === 'function') cb(result)
         })
     })
 }
 
-function doAction(settings, action, automation) {
+async function doAction(settings, action, automation) {
     try {
         switch (action.type) {
             case ACTIONS_TYPE.ORDER: return { type: 'success', text: 'Order Executed' }
-            case ACTIONS_TYPE.ALERT_SMS: return { type: 'success', text: 'SMS Sent' }
-            case ACTIONS_TYPE.ALERT_EMAIL: return { type: 'success', text: 'Email Sent' }
+            case ACTIONS_TYPE.ALERT_SMS: return await sendSMS(settings, automation)
+            case ACTIONS_TYPE.ALERT_EMAIL: return await sendEmail(settings, automation)
         }
     } catch (error) {
         if (LOGS || automation.logs) {
-            logger.error(`Error on execution of - ${automation.name}:${action.type}`, error)
+            if (error.response) logger.error(`Beholder Error - ${error.response.status} - ${error.response.statusText}`, error.response.body)
+            else logger.error(`Error on execution of - ${automation.name}:${action.type}`, error)
         }
     }
+}
+
+async function sendEmail(settings, automation) {
+    await require('./utils/email')(settings, {
+        title: `${automation.name} has fired!`,
+        text: `Hey, your automation has fired by those conditions ${automation.conditions}`
+    })
+    return { type: 'success', text: `${automation.name} has fired!` }
+}
+
+async function sendSMS(settings, automation) {
+    await require('./utils/sms')(settings, {
+        title: `${automation.name} has fired!`,
+        text: `Your auto "${automation.name}" fired\n${automation.conditions}`
+    })
+    return { type: 'success', text: `Your auto "${automation.name}" fired\n${automation.conditions}` }
 }
 
 const findAutomations = memoryKey => {

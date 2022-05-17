@@ -3,6 +3,7 @@
     "nodemon": "^2.0.15"
   },
   "dependencies": {
+    "@sendgrid/mail": "^7.6.2",
     "aes-js": "^3.1.2",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
@@ -17,6 +18,7 @@
     "sequelize": "^6.19.0",
     "sequelize-cli": "^6.4.1",
     "technicalindicators": "^3.1.0",
+    "twilio": "^3.77.0",
     "ws": "^8.5.0"
   },
   "name": "beholder-backend",
