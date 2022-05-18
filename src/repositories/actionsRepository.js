@@ -9,3 +9,5 @@ exports.ACTIONS_TYPE = {
 exports.insertActions = (action, transaction) => actionModel.bulkCreate(action, { transaction })
 
 exports.deleteActions = (automationId, transaction) => actionModel.destroy({ where: { automationId }, transaction })
+
+exports.getActionByOrderTemplateId = orderTemplateId => actionModel.findAll({ where: { orderTemplateId } })

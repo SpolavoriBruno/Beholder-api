@@ -46,8 +46,10 @@ exports.syncSymbols = async (req, res) => {
         .then(data => data.symbols.map(item => {
             const getSymbolFilter = (filter, collection) => collection.find(f => f.filterType === filter)
 
-            const minNotional = getSymbolFilter('MIN_NOTIONAL', item.filters).minNotional
-            const minLotSize = getSymbolFilter('LOT_SIZE', item.filters).minQty
+            const { minNotional } = getSymbolFilter('MIN_NOTIONAL', item.filters)
+            const { minQty, stepSize } = getSymbolFilter('LOT_SIZE', item.filters)
+            const { tickSize } = getSymbolFilter('PRICE_FILTER', item.filters)
+
             return {
                 symbol: item.symbol,
                 basePrecision: item.baseAssetPrecision,
@@ -55,7 +57,9 @@ exports.syncSymbols = async (req, res) => {
                 quotePrecision: item.quoteAssetPrecision,
                 quote: item.quoteAsset,
                 minNotional,
-                minLotSize,
+                minLotSize: minQty,
+                stepSize,
+                tickSize,
                 isFavorite: favoriteSymbols.some(s => s === item.symbol),
             }
         }))

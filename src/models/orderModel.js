@@ -1,6 +1,8 @@
 const Sequelize = require('sequelize')
 const db = require('../db')
 
+const automationModel = require('./automationModel')
+
 const orderModel = db.define('order', {
     id: {
         type: Sequelize.INTEGER,
@@ -58,6 +60,11 @@ const orderModel = db.define('order', {
     }, {
         fields: ['symbol']
     }]
+})
+
+orderModel.belongsTo(automationModel, {
+    foreignKey: 'automationId',
+    onDelete: 'SET NULL'
 })
 
 module.exports = orderModel

@@ -1,4 +1,5 @@
 const orderModel = require('../models/orderModel')
+const automationModel = require('../models/automationModel')
 const Sequelize = require('sequelize')
 
 const PAGE_SIZE = 10
@@ -10,6 +11,7 @@ exports.insertOrder = newOrder => {
 exports.getOrders = (symbol, page = 1) => {
     const options = {
         where: {},
+        include: automationModel,
         order: [['updatedAt', 'DESC']],
         limit: PAGE_SIZE,
         offset: PAGE_SIZE * (page - 1)
@@ -36,7 +38,8 @@ exports.getOrder = (orderId, clientOrderId) => {
         where: {
             orderId,
             clientOrderId
-        }
+        },
+        include: automationModel,
     })
 }
 

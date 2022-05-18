@@ -1,18 +1,17 @@
-const actionModel = require('../models/actionModel')
 const automationModel = require('../models/automationModel')
 
 const PAGE_SIZE = 10
 
 exports.getActiveAutomations = _ => automationModel.findAll({
     where: { isActive: true },
-    include: actionModel
+    include: [{ all: true, nested: true }]
 })
 
-exports.getAutomation = id => automationModel.findByPk(id, { include: actionModel })
+exports.getAutomation = id => automationModel.findByPk(id, { include: [{ all: true, nested: true }] })
 
 exports.getAutomations = (page = 1) => automationModel.findAndCountAll({
     where: {},
-    include: actionModel,
+    include: [{ all: true, nested: true }],
     order: [['isActive', 'DESC'], ['symbol', 'ASC'], ['name', 'ASC']],
     limit: PAGE_SIZE,
     offset: PAGE_SIZE * (page - 1)

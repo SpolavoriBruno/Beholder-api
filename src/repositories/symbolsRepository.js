@@ -44,6 +44,12 @@ exports.updateSymbol = async (symbol, newSymbolData) => {
     if (newSymbolData.minLotSize && newSymbolData.minLotSize !== currentSymbol.minLotSize)
         currentSymbol.minLotSize = newSymbolData.minLotSize
 
+    if (newSymbolData.stepSize && newSymbolData.stepSize !== currentSymbol.stepSize)
+        currentSymbol.stepSize = newSymbolData.stepSize
+
+    if (newSymbolData.tickSize && newSymbolData.tickSize !== currentSymbol.tickSize)
+        currentSymbol.tickSize = newSymbolData.tickSize
+
     if (newSymbolData.isFavorite !== undefined && newSymbolData.isFavorite !== currentSymbol.isFavorite)
         currentSymbol.isFavorite = newSymbolData.isFavorite
 

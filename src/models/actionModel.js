@@ -2,6 +2,8 @@ const { QueryError } = require('sequelize')
 const Sequelize = require('sequelize')
 const db = require('../db')
 
+const orderTemplateModel = require('./orderTemplateModel')
+
 const actionModel = db.define('action', {
     id: {
         type: Sequelize.INTEGER,
@@ -17,8 +19,14 @@ const actionModel = db.define('action', {
         type: Sequelize.STRING,
         allowNull: false
     },
+    orderTemplateId: Sequelize.INTEGER,
     createdAt: Sequelize.DATE,
     updatedAt: Sequelize.DATE
+})
+
+actionModel.belongsTo(orderTemplateModel, {
+    foreignKey: 'orderTemplateId',
+    onDelete: 'SET NULL'
 })
 
 module.exports = actionModel
