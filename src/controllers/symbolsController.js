@@ -1,15 +1,13 @@
-const { getSymbols, getSymbol, updateSymbol, searchSymbols } = require('../repositories/symbolsRepository')
+const {
+    getSymbols, getSymbol, updateSymbol, searchSymbols, deleteAll, bulkInsert
+} = require('../repositories/symbolsRepository')
 const errorHandler = require('../utils/errorHandler')
 
 exports.getSymbols = (req, res) => {
-
     const { search, page, onlyFavorites } = req.query
-
-    let result
-    if (search || page || onlyFavorites)
-        result = searchSymbols(search, onlyFavorites, page)
-    else
-        result = getSymbols()
+    const result = (search || page || onlyFavorites)
+        ? searchSymbols(search, onlyFavorites, page)
+        : getSymbols()
 
     result
         .then(data => res.json(data))
@@ -34,15 +32,13 @@ exports.updateSymbol = (req, res) => {
 
 exports.syncSymbols = async (req, res) => {
     const { getDecryptedSettings } = require('../repositories/settingsRepository')
-    const { deleteAll, bulkInsert } = require('../repositories/symbolsRepository')
 
     const favoriteSymbols = (await getSymbols()).filter(s => s.isFavorite === true).map(s => s.symbol)
     const settings = await getDecryptedSettings(res.locals.token.id)
 
     const { exchangeInfo } = require('../utils/exchange')(settings.get({ plain: true }))
-    // TODO: ckeck if exchangeInfo is used in somewhere else
+
     exchangeInfo()
-        // move it in exchangeInfo ?
         .then(data => data.symbols.map(item => {
             const getSymbolFilter = (filter, collection) => collection.find(f => f.filterType === filter)
 

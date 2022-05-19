@@ -2,13 +2,11 @@ const { getActionByOrderTemplateId } = require('../repositories/actionsRepositor
 const { getOrderTemplate, getOrderTemplates, insertOrderTemplate, updateOrderTemplate, deleteOrderTemplate, } = require('../repositories/orderTemplateRepository')
 
 const sanatizeOrderTemplate = orderTemplate => {
-    const sanatized = { ...orderTemplate }
     orderTemplate.quantity = orderTemplate.quantity ? orderTemplate.quantity.replace(',', '.') : orderTemplate.quantity
     orderTemplate.quantityMultiplier = orderTemplate.quantityMultiplier ? orderTemplate.quantityMultiplier.replace(',', '.') : orderTemplate.quantityMultiplier
     orderTemplate.limitPriceMultiplier = orderTemplate.limitPriceMultiplier ? orderTemplate.limitPriceMultiplier.replace(',', '.') : orderTemplate.limitPriceMultiplier
     orderTemplate.stopPriceMultiplier = orderTemplate.stopPriceMultiplier ? orderTemplate.stopPriceMultiplier.replace(',', '.') : orderTemplate.stopPriceMultiplier
     orderTemplate.icebergQtyMultiplier = orderTemplate.icebergQtyMultiplier ? orderTemplate.icebergQtyMultiplier.replace(',', '.') : orderTemplate.icebergQtyMultiplier
-
 }
 
 exports.getOrderTemplate = (req, res) => {
@@ -17,7 +15,7 @@ exports.getOrderTemplate = (req, res) => {
         .then(o => res.json(o))
 }
 
-exports.getOrderTemplates = async (req, res) => {
+exports.getOrderTemplates = (req, res) => {
     const symbol = req.params.symbol?.toUpperCase()
     const page = req.query.page
     getOrderTemplates(symbol, page)
@@ -60,7 +58,6 @@ exports.deleteOrderTemplate = (req, res) => {
     console.count(`Actions get by order template`)
     getActionByOrderTemplateId(id)
         .then(actions => {
-            console.log(actions)
             if (actions.length)
                 return Promise.reject({
                     status: 409,
