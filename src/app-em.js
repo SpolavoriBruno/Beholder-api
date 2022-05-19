@@ -175,7 +175,9 @@ function startBookMonitor(symbol, broadcastLabel, logs) {
 
         const orderCopy = { ...order }
         delete orderCopy.symbol
-        delete orderCopy.updatedId
+        delete orderCopy.bestAskQty
+        delete orderCopy.bestBidQty
+        delete orderCopy.updateId
         const converted = {}
         Object.entries(orderCopy).map(prop => converted[prop[0]] = parseFloat(prop[1]))
         beholder.updateMemory({
