@@ -47,7 +47,7 @@ const orderModel = db.define('order', {
     isMaker: Sequelize.BOOLEAN,
     limitPrice: Sequelize.STRING,
     stopPrice: Sequelize.STRING,
-    avgPrive: Sequelize.DECIMAL,
+    avgPrice: Sequelize.DECIMAL,
     commission: Sequelize.STRING,
     net: Sequelize.DECIMAL,
     obs: Sequelize.STRING,
