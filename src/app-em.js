@@ -1,5 +1,5 @@
 const logger = require('./utils/logger')
-const { updateOrderByOrderId } = require('./repositories/ordersRepository')
+const { updateOrderByOrderId, getLastFilledOrders } = require('./repositories/ordersRepository')
 const { ORDER_STATUS } = require('./utils/status')
 const { getActiveMonitors, MONITOR_TYPES } = require('./repositories/monitorsRepository')
 const { processIndexes } = require('./utils/indexes')
@@ -50,16 +50,16 @@ function processExecutionData(executionData, broadcastLabel) {
         updateOrderByOrderId(order.orderId, order.clientOrderId, order)
             .then(_order => {
                 if (_order) {
-                    const plainOrder = _order.get({ plain: true })
-                    notifyOrderUpdate(plainOrder)
+                    notifyOrderUpdate(_order)
+
                     beholder.updateMemory({
-                        symbol: plainOrder.symbol,
+                        symbol: _order.symbol,
                         index: MEMORY_KEYS.LAST_ORDER,
-                        value: plainOrder
+                        value: sanatizeOrder(_order)
                     }, r => WSS.broadcast({ notification: r }))
 
-                    if (broadcastLabel && WSS)
-                        WSS.broadcast({ [broadcastLabel]: plainOrder })
+                    if (broadcastLabel)
+                        WSS.broadcast({ [broadcastLabel]: _order })
                 }
             })
             .catch(error => logger.error(error))
@@ -124,7 +124,7 @@ function startUserDataMonitor(broadcastLabel, logs) {
         _ => {
             const wallet = loadWallet(exchange)
             if (logs) logger.info(`Book Monitor - ${broadcastLabel}`, order)
-            if (balanceBroadcast && WSS) WSS.broadcast({ [balanceBroadcast]: wallet })
+            if (balanceBroadcast) WSS.broadcast({ [balanceBroadcast]: wallet })
         },
         executionData => {
             processExecutionData(executionData, executionBroadcast)
@@ -140,7 +140,7 @@ function startMiniTickerMonitor(symbol, broadcastLabel, logs) {
         exchange.miniTickerStream(symbol, markets => {
             if (logs) logger.info(`Mini Ticker Monitor - ${broadcastLabel}`, markets)
 
-            if (broadcastLabel && WSS)
+            if (broadcastLabel)
                 WSS.broadcast({ [broadcastLabel]: markets })
 
             Object.entries(markets).map(market => {
@@ -178,7 +178,7 @@ function startBookMonitor(symbol, broadcastLabel, logs) {
         if (logs) logger.info(`Book Monitor - ${broadcastLabel}`, order)
 
         if (book.length >= BOOK_STREAM_CACHE_SIZE) {
-            if (broadcastLabel && WSS) {
+            if (broadcastLabel) {
                 book.push(order)
                 WSS.broadcast({ [broadcastLabel]: book })
                 book = []
@@ -232,7 +232,7 @@ function startChartMonitor(symbol, interval, indexes, broadcastLabel, logs) {
         }
 
         if (logs) logger.info(`Chart Monitor - ${broadcastLabel}`, lastCandle)
-        if (broadcastLabel && WSS) WSS.broadcast({ [broadcastLabel]: lastCandle })
+        if (broadcastLabel) WSS.broadcast({ [broadcastLabel]: lastCandle })
         beholder.updateMemory({
             symbol, interval,
             value: lastCandle,
@@ -282,7 +282,7 @@ function startTickerMonitor(symbol, broadcastLabel, logs) {
                 value: newMemory
             }, r => WSS.broadcast({ notification: r }))
 
-            if (broadcastLabel && WSS) WSS.broadcast({ [broadcastLabel]: data })
+            if (broadcastLabel) WSS.broadcast({ [broadcastLabel]: data })
 
         } catch (error) {
             if (logs) logger.error(error)
@@ -300,6 +300,30 @@ function stopTickerMonitor(symbol, logs) {
     beholder.deleteMemory(symbol, MEMORY_KEYS.TICKER)
 
     logger.info(`Stop Ticker Monitor - ${symbol}`)
+}
+
+function sanatizeOrder(order) {
+    const cleanOrder = { ...order }
+    delete cleanOrder.id
+    delete cleanOrder.automationId
+    delete cleanOrder.orderId
+    delete cleanOrder.clientOrderId
+    delete cleanOrder.transactTime
+    delete cleanOrder.isMaker
+    delete cleanOrder.commission
+    delete cleanOrder.obs
+    delete cleanOrder.automation
+    delete cleanOrder.createdAt
+    delete cleanOrder.updatedAt
+
+    cleanOrder.limitPrice = parseFloat(cleanOrder.limitPrice)
+    cleanOrder.stopPrice = parseFloat(cleanOrder.stopPrice)
+    cleanOrder.avgPrice = parseFloat(cleanOrder.avgPrice)
+    cleanOrder.net = parseFloat(cleanOrder.net)
+    cleanOrder.quantity = parseFloat(cleanOrder.quantity)
+    cleanOrder.icebergQuantity = parseFloat(cleanOrder.icebergQuantity)
+
+    return cleanOrder
 }
 
 exports.stopMonitor = monitor => {
@@ -354,11 +378,21 @@ exports.init = async (settings, beholderInstance, wssInstance) => {
     exchange = require('./utils/exchange')(settings)
     if (!exchange) throw new Error('Exchange is not initialized')
 
-    const monitors = await getActiveMonitors()
-    monitors.map(monitor =>
-        setTimeout(() => {
-            this.startMonitor(monitor)
-        }, 300))
+    await Promise.all([
+        getActiveMonitors().then(monitors => monitors.map(monitor =>
+            setTimeout(() => {
+                this.startMonitor(monitor)
+            }, 300))
+        ),
+        getLastFilledOrders().then(lastOrders =>
+            lastOrders.map(order => beholder.updateMemory({
+                symbol: order.symbol,
+                index: MEMORY_KEYS.LAST_ORDER,
+                value: sanatizeOrder(order),
+                process: false
+            }))
+        )
+    ]).catch(error => logger.error(error))
 
     logger.info("Exchange Monitor is running")
 }
