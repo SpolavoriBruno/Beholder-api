@@ -4,9 +4,7 @@ const Sequelize = require('sequelize')
 
 const PAGE_SIZE = 10
 
-exports.insertOrder = newOrder => {
-    return orderModel.create(newOrder)
-}
+exports.insertOrder = newOrder => orderModel.create(newOrder)
 
 exports.getOrders = (symbol, page = 1) => {
     const options = {
@@ -22,26 +20,34 @@ exports.getOrders = (symbol, page = 1) => {
             options.where.symbol = {
                 [Sequelize.Op.like]: `%${symbol}%`
             }
-        else
-            options.where = { symbol }
+        else options.where = { symbol }
     }
 
     return orderModel.findAndCountAll(options)
 }
 
-exports.getOrderById = id => {
-    return orderModel.findByPk(id)
-}
+exports.getOrderById = id => orderModel.findByPk(id)
 
-exports.getOrder = (orderId, clientOrderId) => {
-    return orderModel.findOne({
-        where: {
-            orderId,
-            clientOrderId
-        },
-        include: automationModel,
-    })
-}
+
+exports.getOrder = (orderId, clientOrderId) => orderModel.findOne({
+    where: {
+        orderId,
+        clientOrderId
+    },
+    include: automationModel,
+})
+
+exports.getLastFilledOrders = _ => orderModel.findAll({
+    where: { status: 'FILLED' },
+    group: 'symbol',
+    attributes: [Sequelize.fn('max', Sequelize.col('id'))],
+    raw: true
+})
+    .then(orders => orders.map(res => res.max))
+    .then(ids => orderModel.findAll({
+        where: { id: ids },
+        raw: true
+    }))
 
 exports.updateOrderById = async (id, newOrder) => {
     const order = await this.getOrderById(id)
@@ -57,8 +63,8 @@ const updateOrder = async (currentOrder, newOrder) => {
     if (newOrder.status && newOrder.status !== currentOrder.status)
         currentOrder.status = newOrder.status
 
-    if (newOrder.avgPrive && newOrder.avgPrive !== currentOrder.avgPrive)
-        currentOrder.avgPrive = newOrder.avgPrive
+    if (newOrder.avgPrice && newOrder.avgPrice !== currentOrder.avgPrice)
+        currentOrder.avgPrice = newOrder.avgPrice
 
     if (newOrder.obs && newOrder.obs !== currentOrder.obs)
         currentOrder.obs = newOrder.obs
@@ -76,5 +82,5 @@ const updateOrder = async (currentOrder, newOrder) => {
         currentOrder.isMaker = newOrder.isMaker
 
     await currentOrder.save()
-    return currentOrder
+    return currentOrder.get({ plain: true })
 }
