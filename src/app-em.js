@@ -9,6 +9,17 @@ const BOOK_STREAM_CACHE_SIZE = 10
 let WSS, beholder, exchange;
 let book = []
 
+function notifyOrderUpdate(order) {
+    let type = ''
+    switch (order.status) {
+        case 'FILLED': type = 'success'; break
+        case 'REJECTED':
+        case 'EXPIRED': type = 'error'; break
+        default: type = 'info'
+    }
+    WSS.broadcast({ notification: { type, text: `Order ${order.orderId} was updated as ${order.status}` } })
+}
+
 function processExecutionData(executionData, broadcastLabel) {
     if (executionData.X === ORDER_STATUS.NEW) return;
 
@@ -39,15 +50,16 @@ function processExecutionData(executionData, broadcastLabel) {
         updateOrderByOrderId(order.orderId, order.clientOrderId, order)
             .then(_order => {
                 if (_order) {
-
+                    const plainOrder = _order.get({ plain: true })
+                    notifyOrderUpdate(plainOrder)
                     beholder.updateMemory({
-                        symbol: order.symbol,
+                        symbol: plainOrder.symbol,
                         index: MEMORY_KEYS.LAST_ORDER,
-                        value: order
+                        value: plainOrder
                     }, r => WSS.broadcast({ notification: r }))
 
                     if (broadcastLabel && WSS)
-                        WSS.broadcast({ [broadcastLabel]: order })
+                        WSS.broadcast({ [broadcastLabel]: plainOrder })
                 }
             })
             .catch(error => logger.error(error))
@@ -167,6 +179,7 @@ function startBookMonitor(symbol, broadcastLabel, logs) {
 
         if (book.length >= BOOK_STREAM_CACHE_SIZE) {
             if (broadcastLabel && WSS) {
+                book.push(order)
                 WSS.broadcast({ [broadcastLabel]: book })
                 book = []
             }
@@ -180,10 +193,17 @@ function startBookMonitor(symbol, broadcastLabel, logs) {
         delete orderCopy.updateId
         const converted = {}
         Object.entries(orderCopy).map(prop => converted[prop[0]] = parseFloat(prop[1]))
+
+        const currentMemory = beholder.getMemory({ symbol, index: MEMORY_KEYS.BOOK })
+        const newMemory = {}
+
+        newMemory.previous = currentMemory ? currentMemory.previous : converted
+        newMemory.current = converted
+
         beholder.updateMemory({
             symbol: order.symbol,
             index: MEMORY_KEYS.BOOK,
-            value: converted,
+            value: newMemory,
         }, r => WSS.broadcast({ notification: r }))
     })
     logger.info(`Start Book Monitor - ${broadcastLabel}`)

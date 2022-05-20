@@ -5,6 +5,7 @@ const ERROR_TYPES = {
     NOT_FOUND: 'NOT_FOUND',
     FORBIDDEN: 'FORBIDDEN',
     UNAUTHORIZED: 'UNAUTHORIZED',
+    DB_ERROR: 'DB_ERROR',
 }
 
 const findErrorType = (error) => {
@@ -13,23 +14,30 @@ const findErrorType = (error) => {
             case 401:
                 return ERROR_TYPES.UNAUTHORIZED
         }
-
-    if (error.name)
-        switch (error.name) {
-            case value:
-
-                break;
+    if (error.message && error.name) {
+        if (error.message.includes('WHERE')) {
+            return ERROR_TYPES.DB_ERROR
         }
+    }
 }
 
-module.exports = (error, callback) => {
+module.exports = (error, callback, options) => {
     let status = 501
     let body = undefined
+
+    options?.on && logger.error(`on ${options.on}`, error)
 
     switch (findErrorType(error)) {
         case ERROR_TYPES.UNAUTHORIZED:
             status = 401
-            break;
+            break
+
+        case ERROR_TYPES.DB_ERROR:
+            status = 400
+            body = {
+                error: error.message || serverErrorMsg,
+            }
+            break
 
         default:
             status = 500
