@@ -62,6 +62,7 @@ exports.MEMORY_KEYS = {
 
 exports.init = async _ => {
     const automations = await getActiveAutomations()
+    await sleep(2500)
     try {
         while (lockBrain) await sleep(100)
         lockBrain = true
@@ -138,10 +139,10 @@ const processBrain = async (memoryKey, cb) => {
     try {
         const automations = findAutomations(memoryKey)
         if (!automations || !automations.length) return
+        LOGS && logger.info(`Beholder Brain will test ${automations.length} auto for ${memoryKey}`)
 
         while (lockBrain) await sleep(100)
         lockBrain = true
-
         automations.map(auto => evalDecision(auto, cb))
     } finally {
         lockBrain = false
@@ -220,7 +221,15 @@ function calcPrice(orderTemplate, symbol, isStop) {
     let newPrice, factor
 
     try {
-        if (LIMIT_TYPES.includes(orderTemplate.type)) {
+        const memory = MEMORY[`${orderTemplate.symbol}:BOOK`]
+        if (!memory) {
+            throw new Error(`Can't get market price for ${orderTemplate.symbol}`, memory)
+        }
+
+        if (orderTemplate.type === 'MARKET')
+            return orderTemplate.side === 'BUY' ? memory.current.bestAsk : memory.current.bestBid
+
+        else if (LIMIT_TYPES.includes(orderTemplate.type)) {
             if (isStop) {
                 if (parseFloat(orderTemplate.stopPrice)) return orderTemplate.stopPrice
                 newPrice = eval(getEval(orderTemplate.stopPrice)) * orderTemplate.stopPriceMultiplier
@@ -229,10 +238,6 @@ function calcPrice(orderTemplate, symbol, isStop) {
                 newPrice = eval(getEval(orderTemplate.limitPrice)) * orderTemplate.limitPriceMultiplier
             }
         } else {
-            const memory = MEMORY[`${orderTemplate.symbol}:BOOK`]
-            if (!memory) {
-                throw new Error(`Can't get market price for ${orderTemplate.symbol}`, memory)
-            }
             newPrice = orderTemplate.side === 'BUY' ? memory.current.bestAsk : memory.current.bestBid
             newPrice = isStop ? newPrice * orderTemplate.stopPriceMultiplier : newPrice * orderTemplate.limitPriceMultiplier
 
@@ -277,7 +282,7 @@ function calcQty(orderTemplate, price, symbol, isIceberg) {
             break;
 
         case "MIN_NOTIONAL":
-            newQty = (parseFloat(symbol.minNotional) / parseFloat(price)) * (multiplier <= 1 ? 1.02 : multiplier)
+            newQty = (parseFloat(symbol.minNotional) / parseFloat(price)) * (multiplier <= 1 ? 1 : multiplier)
             break;
 
         case "LAST_ORDER_QTY":
@@ -289,9 +294,7 @@ function calcQty(orderTemplate, price, symbol, isIceberg) {
             break;
     }
 
-    console.log('[Place Order] Order quantity', orderTemplate.quantity, newQty)
-
-    factor = Math.floor(newQty / stepSize)
+    factor = Math.ceil(newQty / stepSize) + 1
 
     return (factor * stepSize).toFixed(symbol.basePrecision)
 }
@@ -347,9 +350,10 @@ async function placeOrder(settings, automation, action) {
         else
             result = await exchange.sell(order.symbol, order.quantity, order.limitPrice, order.options)
     } catch (error) {
-        console.error(`Binance error status ${error.statusCode}`)
-        console.error(error.body ? error.body : error)
-        console.info(order)
+        error.statusCode && console.error(`Binance error status ${error.statusCode}`)
+        error.body && console.error('[ Place Order ]', error.body.msg)
+
+        console.info({ order, symbol, ba: MEMORY['BTCUSDT:BOOK']?.current })
         return { type: 'error', text: error.body ? error.body : error.message }
     }
 
