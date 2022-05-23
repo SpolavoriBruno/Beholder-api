@@ -6,7 +6,13 @@ exports.ACTIONS_TYPE = {
     ORDER: 'ORDER',
 }
 
-exports.insertActions = (action, transaction) => actionModel.bulkCreate(action, { transaction })
+exports.insertActions = (actions, transaction) => {
+    actions.map(action => {
+        delete action.id
+        return action
+    })
+    return actionModel.bulkCreate(actions, { transaction })
+}
 
 exports.deleteActions = (automationId, transaction) => actionModel.destroy({ where: { automationId }, transaction })
 

@@ -1,6 +1,6 @@
 const { deleteAutomation, getAutomation,
     getAutomations, insertAutomation,
-    updateAutomation, getAutomationTypes, automationExists
+    updateAutomation, automationExists
 } = require('../repositories/automationsRepository')
 const { updateBrain, deleteBrain } = require('../beholder')
 const db = require('../db')
@@ -9,7 +9,7 @@ const logger = require('../utils/logger')
 const { insertActions, deleteActions } = require('../repositories/actionsRepository')
 
 const validateConditions = conditions =>
-    /^(MEMORY\[\'[a-z0-9:_\-]+?\'\]([\.a-z]+)?[><=!]+([0-9\.\-]+?|true|false|(\'[a-z:_]+?\')|MEMORY\[\'[a-z0-9:_\-]+?\'\](\.[a-z]+)?)( && )?)+$/i.test(conditions)
+    /^(MEMORY\[\'[a-z0-9:_\-]+?\'\]([\.a-z]+)?[><=!]+([0-9\.\-]+?|true|false|(\'[a-z:_]+?\')|MEMORY\[\'[a-z0-9:_\-]+?\'\]([\.a-z]+)?)( && )?)+$/i.test(conditions)
 
 exports.startAutomation = async (req, res) => {
     const id = req.params.id
@@ -79,6 +79,7 @@ exports.insertAutomation = async (req, res) => {
                 await insertActions(actions, transaction)
             } catch (error) {
                 transaction.rollback()
+                console.error(error)
                 return res.status(500).json("Error updating actions")
             }
 

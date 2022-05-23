@@ -59,6 +59,10 @@ exports.updateOrderByOrderId = async (orderId, clientOrderId, newOrder) => {
     return updateOrder(order, newOrder)
 }
 
+exports.LIMIT_TYPES = ["LIMIT", "STOP_LOSS_LIMIT", "TAKE_PROFIT_LIMIT"]
+exports.STOP_TYPES = ["STOP_LOSS", "STOP_LOSS_LIMIT", "TAKE_PROFIT", "TAKE_PROFIT_LIMIT"]
+
+
 const updateOrder = async (currentOrder, newOrder) => {
     if (newOrder.status && newOrder.status !== currentOrder.status)
         currentOrder.status = newOrder.status

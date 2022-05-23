@@ -15,6 +15,7 @@ module.exports = settings => {
     const privateAPI = new Binance({
         APIKEY: settings.accessKey,
         APISECRET: settings.secretKey,
+        recvWindow: 5000,
         urls: {
             base: formatUrl(settings.apiUrl),
             stream: formatUrl(settings.streamUrl)

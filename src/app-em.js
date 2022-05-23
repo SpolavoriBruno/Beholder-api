@@ -120,6 +120,8 @@ function startUserDataMonitor(broadcastLabel, logs) {
 
     const [balanceBroadcast, executionBroadcast] = broadcastLabel ? broadcastLabel.split(',') : [null, null]
 
+    loadWallet(exchange)
+
     exchange.userDataStream(
         _ => {
             const wallet = loadWallet(exchange)
