@@ -1,4 +1,5 @@
-const { getOrders, insertOrder, updateOrderByOrderId, getOrderById } = require('../repositories/ordersRepository')
+const { getMemory } = require('../beholder')
+const { getOrders, insertOrder, updateOrderByOrderId, getOrderById, getReportOrders } = require('../repositories/ordersRepository')
 const { getDecryptedSettings } = require('../repositories/settingsRepository')
 const { ORDER_STATUS } = require('../utils/status')
 
@@ -65,6 +66,88 @@ exports.cancelOrder = async (req, res, next) => {
 
     res.json(order.get({ plain: true }))
 }
+
+function getThirtyDaysAgo() {
+    const date = new Date()
+    date.setUTCDate(date.getUTCDate() - 30)
+    date.setUTCHours(0, 0, 0, 0)
+    return date.getTime()
+}
+
+function getToday() {
+    const date = new Date()
+    return date.getTime()
+}
+
+function calcVolume(orders, side, startTime, endTime) {
+    startTime = startTime || 0
+    endTime = endTime || Date.now()
+
+    const filteredOrders = orders.filter(o =>
+        o.transactTime >= startTime &&
+        o.transactTime <= endTime &&
+        o.side === side
+    )
+    if (!filteredOrders.length) return 0
+
+    return filteredOrders
+        .map(o => parseFloat(o.net))
+        .reduce((a, b) => a + b)
+}
+
+exports.getOrdersReport = async (req, res) => {
+    const quote = req.params.quote
+    const startDate = parseInt(req.query.startDate) || getThirtyDaysAgo()
+    const endDate = parseInt(req.query.endDate) || getToday()
+
+    if (endDate - startDate > (90 * 24 * 60 * 60 * 1000)) {
+        return res.status(400).send('Date range too large')
+    }
+
+    getReportOrders(quote, startDate, endDate)
+        .then(orders => {
+            if (!orders || !orders.length) return res.json({})
+
+            const daysInRange = Math.ceil((endDate - startDate) / (24 * 60 * 60 * 1000))
+
+            const subs = []
+            const series = []
+            for (let i = 0; i < daysInRange; i++) {
+                const newDate = new Date(startDate)
+                newDate.setUTCDate(newDate.getUTCDate() + i)
+                subs.push(`${newDate.getDate()}/${newDate.getMonth() + 1}`)
+
+                const lastMoment = new Date(newDate.getTime())
+                lastMoment.setUTCHours(23, 59, 59, 999)
+
+                const partialBuy = calcVolume(orders, 'BUY', newDate.getTime(), lastMoment.getTime())
+                const partialSell = calcVolume(orders, 'SELL', newDate.getTime(), lastMoment.getTime())
+
+                series.push(partialSell - partialBuy)
+            }
+            const buyVolume = calcVolume(orders, 'BUY')
+            const sellVolume = calcVolume(orders, 'SELL')
+            const profit = sellVolume - buyVolume
+
+            const wallet = getMemory(quote, 'WALLET')
+            const profitPerc = profit * 100 / (parseFloat(wallet) - profit)
+
+            res.json({
+                quote,
+                orders: orders.length,
+                buyVolume,
+                sellVolume,
+                wallet,
+                profit,
+                profitPerc,
+                startDate,
+                endDate,
+                subs,
+                series,
+            })
+        })
+}
+
 exports.syncOrder = async (req, res, next) => {
     const id = res.locals.token.id
     const settings = await getDecryptedSettings(id)

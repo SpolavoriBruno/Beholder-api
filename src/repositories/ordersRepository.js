@@ -6,6 +6,22 @@ const PAGE_SIZE = 10
 
 exports.insertOrder = newOrder => orderModel.create(newOrder)
 
+exports.getReportOrders = (quoteAsset, startDate, endDate) => {
+    startDate = startDate || 0
+    endDate = endDate || Date.now()
+    return orderModel.findAll({
+        where: {
+            symbol: { [Sequelize.Op.like]: `%${quoteAsset}` },
+            transactTime: { [Sequelize.Op.between]: [startDate, endDate] },
+            status: 'FILLED',
+            net: { [Sequelize.Op.gt]: 0 }
+        },
+        order: [['transactTime', 'ASC']],
+        include: automationModel,
+        raw: true
+    })
+}
+
 exports.getOrders = (symbol, page = 1) => {
     const options = {
         where: {},
