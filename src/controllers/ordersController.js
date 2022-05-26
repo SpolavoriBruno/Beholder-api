@@ -132,6 +132,29 @@ exports.getOrdersReport = async (req, res) => {
             const wallet = getMemory(quote, 'WALLET')
             const profitPerc = profit * 100 / (parseFloat(wallet) - profit)
 
+            const automationsObj = {}
+            orders.forEach(order => {
+                const automationId = order.automationId ?? 'M'
+
+                if (!automationsObj[automationId]) {
+                    automationsObj[automationId] = {
+                        name: order.automationId ? order['automation.name'] : "Manual",
+                        executions: 1,
+                        net: 0,
+                    }
+                } else
+                    automationsObj[automationId].executions++
+
+                if (order.side === 'BUY')
+                    automationsObj[automationId].net -= parseFloat(order.net)
+                else
+                    automationsObj[automationId].net += parseFloat(order.net)
+            })
+
+            const automations = Object.entries(automationsObj)
+                .map(a => a[1])
+                .sort((a, b) => b.net - a.net)
+
             res.json({
                 quote,
                 orders: orders.length,
@@ -143,7 +166,7 @@ exports.getOrdersReport = async (req, res) => {
                 startDate,
                 endDate,
                 subs,
-                series,
+                series, automations
             })
         })
 }
