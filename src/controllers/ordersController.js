@@ -3,6 +3,9 @@ const { getOrders, insertOrder, updateOrderByOrderId, getOrderById, getReportOrd
 const { getDecryptedSettings } = require('../repositories/settingsRepository')
 const { ORDER_STATUS } = require('../utils/status')
 
+const MS_IN_DAY = 24 * 60 * 60 * 1000
+const MS_IN_HOUR = 60 * 60 * 1000
+
 exports.getOrders = async (req, res, next) => {
     const symbol = req.params.symbol && req.params.symbol.toUpperCase()
     const page = parseInt(req.query.page) || 1
@@ -76,7 +79,39 @@ function getThirtyDaysAgo() {
 
 function getToday() {
     const date = new Date()
+    date.setUTCHours(23, 59, 59, 999)
     return date.getTime()
+}
+
+function getStartToday() {
+    const date = new Date();
+    date.setUTCHours(0, 0, 0, 0);
+    return date.getTime();
+}
+
+function groupByAutomations(orders) {
+    const automationsObj = {}
+    orders.forEach(order => {
+        const automationId = order.automationId ?? 'M'
+
+        if (!automationsObj[automationId]) {
+            automationsObj[automationId] = {
+                name: order.automationId ? order['automation.name'] : "Manual",
+                executions: 1,
+                net: 0,
+            }
+        } else
+            automationsObj[automationId].executions++
+
+        if (order.side === 'BUY')
+            automationsObj[automationId].net -= parseFloat(order.net)
+        else
+            automationsObj[automationId].net += parseFloat(order.net)
+    })
+
+    return Object.entries(automationsObj)
+        .map(a => a[1])
+        .sort((a, b) => b.net - a.net)
 }
 
 function calcVolume(orders, side, startTime, endTime) {
@@ -95,20 +130,19 @@ function calcVolume(orders, side, startTime, endTime) {
         .reduce((a, b) => a + b)
 }
 
-exports.getOrdersReport = async (req, res) => {
+exports.getMonthReport = async (req, res) => {
     const quote = req.params.quote
     const startDate = parseInt(req.query.startDate) || getThirtyDaysAgo()
-    const endDate = parseInt(req.query.endDate) || getToday()
+    let endDate = parseInt(req.query.endDate) || getToday()
 
-    if (endDate - startDate > (90 * 24 * 60 * 60 * 1000)) {
-        return res.status(400).send('Date range too large')
-    }
+    if (endDate - startDate > (90 * MS_IN_DAY))
+        endDate = startDate + (90 * MS_IN_DAY)
 
     getReportOrders(quote, startDate, endDate)
         .then(orders => {
             if (!orders || !orders.length) return res.json({})
 
-            const daysInRange = Math.ceil((endDate - startDate) / (24 * 60 * 60 * 1000))
+            const daysInRange = Math.ceil((endDate - startDate) / MS_IN_DAY)
 
             const subs = []
             const series = []
@@ -131,29 +165,7 @@ exports.getOrdersReport = async (req, res) => {
 
             const wallet = getMemory(quote, 'WALLET')
             const profitPerc = profit * 100 / (parseFloat(wallet) - profit)
-
-            const automationsObj = {}
-            orders.forEach(order => {
-                const automationId = order.automationId ?? 'M'
-
-                if (!automationsObj[automationId]) {
-                    automationsObj[automationId] = {
-                        name: order.automationId ? order['automation.name'] : "Manual",
-                        executions: 1,
-                        net: 0,
-                    }
-                } else
-                    automationsObj[automationId].executions++
-
-                if (order.side === 'BUY')
-                    automationsObj[automationId].net -= parseFloat(order.net)
-                else
-                    automationsObj[automationId].net += parseFloat(order.net)
-            })
-
-            const automations = Object.entries(automationsObj)
-                .map(a => a[1])
-                .sort((a, b) => b.net - a.net)
+            const automations = groupByAutomations(orders)
 
             res.json({
                 quote,
@@ -166,9 +178,69 @@ exports.getOrdersReport = async (req, res) => {
                 startDate,
                 endDate,
                 subs,
-                series, automations
+                series,
+                automations
             })
         })
+}
+
+exports.getDayTradeReport = (req, res) => {
+
+    const quote = req.params.quote
+
+    let startDate = req.query.date ? parseInt(req.query.date) : getStartToday();
+    const endDate = startDate + MS_IN_DAY - 1
+
+    if ((endDate - startDate) > (MS_IN_DAY)) startDate = getStartToday();
+    getReportOrders(quote, startDate, endDate)
+        .then(orders => {
+            if (!orders || !orders.length) return res.json({})
+
+            const subs = []
+            const series = []
+            for (let i = 0; i < 24; i++) {
+                const newDate = new Date(startDate)
+                newDate.setUTCHours(i)
+                subs.push(`${i}h`)
+
+                const lastDate = newDate.getTime() + MS_IN_HOUR - 1
+
+                const partialBuy = calcVolume(orders, 'BUY', newDate.getTime(), lastDate)
+                const partialSell = calcVolume(orders, 'SELL', newDate.getTime(), lastDate)
+
+                series.push(partialSell - partialBuy)
+            }
+
+            const buyVolume = calcVolume(orders, 'BUY')
+            const sellVolume = calcVolume(orders, 'SELL')
+            const profit = sellVolume - buyVolume
+
+            const wallet = getMemory(quote, 'WALLET')
+            const profitPerc = profit * 100 / (parseFloat(wallet) - profit)
+            const automations = groupByAutomations(orders)
+
+            res.json({
+                quote,
+                orders: orders.length,
+                buyVolume,
+                sellVolume,
+                wallet,
+                profit,
+                profitPerc,
+                startDate,
+                endDate,
+                subs,
+                series,
+                automations
+            })
+        })
+}
+
+exports.getOrdersReport = (req, res) => {
+    if (req.query.date)
+        return this.getDayTradeReport(req, res)
+    else
+        return this.getMonthReport(req, res)
 }
 
 exports.syncOrder = async (req, res, next) => {
