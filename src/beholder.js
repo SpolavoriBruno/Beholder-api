@@ -260,3 +260,30 @@ exports.getMemoryIndexes = _ =>
             return 0
         })
 
+const STABLE_COINS = ['USD', 'USDT', 'USDC', 'BUSD']
+const FIAT_COINS = ['BRL', 'EUR', 'GBP']
+
+const getStableConversion = (baseAsset, quoteAsset, baseQty) => {
+    if (STABLE_COINS.includes(baseAsset)) return baseQty
+
+    const book = this.getMemory(baseAsset + quoteAsset, 'BOOK', null)
+    if (book) return book.current.bestBid * parseFloat(baseQty)
+    return 0
+}
+
+const getFiatConversion = (stableCoin, fiatCoin, fiatQty) => {
+    const book = this.getMemory(stableCoin + fiatCoin, 'BOOK', null)
+    if (book) return parseFloat(fiatQty) / book.current.bestBid
+    return 0
+}
+
+exports.tryUSDConvertion = (baseAsset, baseQty) => {
+    if (STABLE_COINS.includes(baseAsset)) return baseQty
+    if (FIAT_COINS.includes(baseAsset)) return getFiatConversion('USD', baseAsset, baseQty)
+
+    for (let i = 0; i < STABLE_COINS.length; i++) {
+        const converted = getStableConversion(baseAsset, STABLE_COINS[i], baseQty)
+        if (converted > 0) return converted
+    }
+    return 0
+}
