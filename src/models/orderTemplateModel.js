@@ -1,4 +1,3 @@
-const { QueryError } = require('sequelize')
 const Sequelize = require('sequelize')
 const db = require('../db')
 
@@ -29,11 +28,11 @@ const orderTemplateModel = db.define('orderTemplate', {
         type: Sequelize.STRING,
         allowNull: false
     },
-    quantityMultiplier: Sequelize.DECIMAL(10, 2),
+    quantityMultiplier: Sequelize.DECIMAL(10, 4),
     limitPrice: Sequelize.STRING,
-    limitPriceMultiplier: Sequelize.DECIMAL(10, 2),
+    limitPriceMultiplier: Sequelize.DECIMAL(10, 4),
     stopPrice: Sequelize.STRING,
-    stopPriceMultiplier: Sequelize.DECIMAL(10, 2),
+    stopPriceMultiplier: Sequelize.DECIMAL(10, 4),
     icebergQty: Sequelize.STRING,
     icebergQtyMultiplier: Sequelize.STRING,
     createdAt: Sequelize.DATE,
