@@ -16,10 +16,15 @@ getDefaultSettings()
             logger.info(`Server is running on port ${port}`)
         })
 
+        if (!settings.accessKey || !settings.secretKey) {
+            console.warn("Start on configuration mode, not fund valid Binance API Key or Secret")
+            console.warn(`See more on http://localhost:${port}/startconfig`)
+            return
+        }
+
         beholder.init()
         const wss = appWS(server)
 
         appEM.init(settings, beholder, wss)
     })
     .catch(errorHandler)
-
