@@ -10,21 +10,27 @@ const { getDefaultSettings } = require('../src/repositories/settingsRepository')
 
 const port = process.env.PORT || 3000
 
+process.on('uncaughtException', (...params) => { console.error(...params) })
+
 getDefaultSettings()
     .then(settings => {
         const server = app.listen(port, () => {
             logger.info(`Server is running on port ${port}`)
         })
+        const wss = appWS(server)
 
         if (!settings.accessKey || !settings.secretKey) {
             console.warn("Start on configuration mode, not fund valid Binance API Key or Secret")
             console.warn(`See more on http://localhost:${port}/startconfig`)
+
+            process.on('configureBinanceAPI', () => {
+                beholder.init()
+                appEM.init(settings, beholder, wss)
+            })
             return
         }
 
         beholder.init()
-        const wss = appWS(server)
-
         appEM.init(settings, beholder, wss)
     })
     .catch(errorHandler)

@@ -2,11 +2,12 @@ const { getMemory } = require('../beholder')
 const { getOrders, insertOrder, updateOrderByOrderId, getOrderById, getReportOrders } = require('../repositories/ordersRepository')
 const { getDecryptedSettings } = require('../repositories/settingsRepository')
 const { ORDER_STATUS } = require('../utils/status')
+const { sleep } = require('../utils/time')
 
 const MS_IN_DAY = 24 * 60 * 60 * 1000
 const MS_IN_HOUR = 60 * 60 * 1000
 
-exports.getOrders = async (req, res, next) => {
+exports.getOrders = async (req, res) => {
     const symbol = req.params.symbol && req.params.symbol.toUpperCase()
     const page = parseInt(req.query.page) || 1
     const orders = await getOrders(symbol, page)
@@ -14,7 +15,7 @@ exports.getOrders = async (req, res, next) => {
     res.json(orders)
 }
 
-exports.placeOrder = async (req, res, next) => {
+exports.placeOrder = async (req, res) => {
     const id = res.locals.token.id
     const settings = await getDecryptedSettings(id)
     const exchange = require('../utils/exchange')(settings)
@@ -29,7 +30,7 @@ exports.placeOrder = async (req, res, next) => {
         else
             result = await exchange.sell(symbol, quantity, price, options)
     } catch (error) {
-        console.error(error.toJSON())
+        console.error(error)
         return res.status(400).send(error.body)
     }
 
@@ -46,7 +47,7 @@ exports.placeOrder = async (req, res, next) => {
     res.status(201).json(order.get({ plain: true }))
 }
 
-exports.cancelOrder = async (req, res, next) => {
+exports.cancelOrder = async (req, res) => {
     const token = res.locals.token.id
     const settings = await getDecryptedSettings(token)
     const exchange = require('../utils/exchange')(settings)
@@ -57,7 +58,7 @@ exports.cancelOrder = async (req, res, next) => {
     try {
         result = await exchange.cancel(symbol, orderId)
     } catch (error) {
-        console.error(error.toJSON())
+        console.error(error())
         return res.status(400).send(error.body)
     }
 
@@ -67,7 +68,7 @@ exports.cancelOrder = async (req, res, next) => {
         status
     })
 
-    res.json(order.get({ plain: true }))
+    res.json(order.get)
 }
 
 function getThirtyDaysAgo() {
@@ -96,7 +97,7 @@ function groupByAutomations(orders) {
 
         if (!automationsObj[automationId]) {
             automationsObj[automationId] = {
-                name: order.automationId ? order['automation.name'] : "Manual",
+                name: order.automationId ? order['automation.name'] : "Others",
                 executions: 1,
                 net: 0,
             }
@@ -181,7 +182,7 @@ exports.getMonthReport = async (req, res) => {
                 series,
                 automations
             })
-        })
+        }).catch(console.error)
 }
 
 exports.getDayTradeReport = (req, res) => {
@@ -233,7 +234,7 @@ exports.getDayTradeReport = (req, res) => {
                 series,
                 automations
             })
-        })
+        }).catch(console.error)
 }
 
 exports.getOrdersReport = (req, res) => {
@@ -243,7 +244,7 @@ exports.getOrdersReport = (req, res) => {
         return this.getMonthReport(req, res)
 }
 
-exports.syncOrder = async (req, res, next) => {
+exports.syncOrder = async (req, res) => {
     const id = res.locals.token.id
     const settings = await getDecryptedSettings(id)
     const exchange = require('../utils/exchange')(settings)
@@ -266,7 +267,7 @@ exports.syncOrder = async (req, res, next) => {
 
         binanceTrade = await exchange.orderTrade(order.symbol, order.orderId)
     } catch (error) {
-        console.error(error.toJSON())
+        console.error(error())
         return res.status(404).send(error.body)
     }
 
@@ -274,6 +275,7 @@ exports.syncOrder = async (req, res, next) => {
     order.avg = quoteQuantity / parseFloat(binanceOrder.executedQty)
     order.isMaker = binanceTrade.isMaker
     order.commission = binanceTrade.commission
+    order.quantity = binanceOrder.executedQty;
 
     const isQuoteCommission = binanceTrade.commissionAsset && order.symbol.endsWith(binanceTrade.commissionAsset)
     order.net = isQuoteCommission
@@ -282,5 +284,4 @@ exports.syncOrder = async (req, res, next) => {
 
     await order.save()
     return res.json(order)
-
 }

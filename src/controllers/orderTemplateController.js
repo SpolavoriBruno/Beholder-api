@@ -13,6 +13,7 @@ exports.getOrderTemplate = (req, res) => {
     const id = req.params.id
     getOrderTemplate(id)
         .then(o => res.json(o))
+        .catch(console.error)
 }
 
 exports.getOrderTemplates = (req, res) => {
@@ -20,6 +21,7 @@ exports.getOrderTemplates = (req, res) => {
     const page = req.query.page
     getOrderTemplates(symbol, page)
         .then(o => res.json(o))
+        .catch(console.error)
 }
 
 function validatePrice(price) {
@@ -64,7 +66,9 @@ exports.deleteOrderTemplate = (req, res) => {
                     message: 'You cant delete and Order Template used by an Action'
                 })
 
-            return deleteOrderTemplate(id).then(_ => res.sendStatus(204))
+            return deleteOrderTemplate(id)
+                .then(_ => res.sendStatus(204))
+                .catch(error => logger.error(error))
         })
         .catch(error => {
             if (error.status === 409)

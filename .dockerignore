@@ -1,0 +1,9 @@
+Dokerfile
+
+.env*
+.git
+
+npm-debug.log
+node_modules
+
+logs

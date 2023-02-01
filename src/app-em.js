@@ -225,6 +225,9 @@ function startChartMonitor(symbol, interval, indexes, broadcastLabel, logs) {
     if (!interval) return new Error('Cant start chart monitor without interval')
     if (!indexes) return
 
+    let monitorName = symbol
+    if (broadcastLabel) monitorName += `.${broadcastLabel}`
+
     exchange.chartStream(symbol, interval, ohlc => {
         const lastCandle = {
             open: ohlc.open[ohlc.open.length - 1],
@@ -233,7 +236,7 @@ function startChartMonitor(symbol, interval, indexes, broadcastLabel, logs) {
             low: ohlc.low[ohlc.low.length - 1],
         }
 
-        if (logs) logger.info(`Chart Monitor - ${broadcastLabel}`, lastCandle)
+        if (logs) logger.info(`Chart Monitor - ${monitorName}`, lastCandle)
         if (broadcastLabel) WSS.broadcast({ [broadcastLabel]: lastCandle })
         beholder.updateMemory({
             symbol, interval,
@@ -249,7 +252,7 @@ function startChartMonitor(symbol, interval, indexes, broadcastLabel, logs) {
                 })
         })
     })
-    logger.info(`Start Chart Monitor - ${symbol}.${broadcastLabel}`)
+    logger.info(`Start Chart Monitor - ${monitorName}`)
 }
 
 function stopChartMonitor(symbol, interval, indexes, logs) {
@@ -339,7 +342,6 @@ exports.stopMonitor = monitor => {
             return stopMiniTickerMonitor(monitor.symbol)
         case MONITOR_TYPES.TICKER:
             return stopTickerMonitor(monitor.symbol)
-
     }
 }
 
@@ -385,7 +387,7 @@ exports.init = async (settings, beholderInstance, wssInstance) => {
             setTimeout(() => {
                 this.startMonitor(monitor)
             }, 300))
-        ),
+        ).catch(console.error),
         getLastFilledOrders().then(lastOrders =>
             lastOrders.map(order => beholder.updateMemory({
                 symbol: order.symbol,
@@ -393,7 +395,7 @@ exports.init = async (settings, beholderInstance, wssInstance) => {
                 value: sanatizeOrder(order),
                 process: false
             }))
-        )
+        ).catch(error => logger.error(error))
     ]).catch(error => logger.error(error))
 
     logger.info("Exchange Monitor is running")

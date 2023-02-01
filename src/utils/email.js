@@ -14,5 +14,5 @@ module.exports = (settings, message) => {
 
     return sgMail.send(msg).then(() => {
         console.count('Email sent')
-    })
+    }).catch(error => logger.error(error))
 }

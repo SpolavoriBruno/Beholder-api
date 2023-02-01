@@ -16,6 +16,7 @@ exports.doAction = async (settings, action, automation, _beholder) => {
             case ACTIONS_TYPE.ORDER: return await placeOrder(settings, automation, action)
             case ACTIONS_TYPE.ALERT_SMS: return await sendSMS(settings, automation)
             case ACTIONS_TYPE.ALERT_EMAIL: return await sendEmail(settings, automation)
+            case ACTIONS_TYPE.WEBHOOK: return await sendWebhook(settings, automation)
         }
     } catch (error) {
         if (LOGS || automation.logs) {
@@ -33,7 +34,6 @@ function calcPrice(orderTemplate, symbol, isStop) {
         // const memory = MEMORY[`${orderTemplate.symbol}:BOOK`]
         const memory = beholder.getMemory(orderTemplate.symbol, beholder.MEMORY_KEYS.BOOK)
         if (!memory) throw new Error(`Can't get market price for ${orderTemplate.symbol}`, memory)
-
 
         if (orderTemplate.type === 'MARKET')
             return orderTemplate.side === 'BUY' ? memory.current.bestAsk : memory.current.bestBid
@@ -205,6 +205,13 @@ async function sendSMS(settings, automation) {
     await require('../utils/sms')(settings, {
         title: `${automation.name} has fired!`,
         text: `Your auto "${automation.name}" fired\n${automation.conditions}`
+    })
+    return { type: 'success', text: `Your auto "${automation.name}" fired\n${automation.conditions}` }
+}
+
+async function sendWebhook(settings, automation) {
+    await require('../utils/webhook')(settings, {
+
     })
     return { type: 'success', text: `Your auto "${automation.name}" fired\n${automation.conditions}` }
 }

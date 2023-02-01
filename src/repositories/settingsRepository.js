@@ -9,7 +9,11 @@ exports.getSettings = id => settingsModel.findOne({ where: { id } })
 
 exports.updateSettings = async (id, newSettings) => {
     const currentSettings = await this.getSettings(id)
+    let needReboot = false
     this.clearSettingsCache(id)
+
+    if ((!currentSettings.accessKey && newSettings.accessKey)
+        || (!currentSettings.secretKey) && newSettings.secretKey) needReboot = true
 
     if (newSettings.email && newSettings.email !== currentSettings.email)
         currentSettings.email = newSettings.email
@@ -45,6 +49,8 @@ exports.updateSettings = async (id, newSettings) => {
         currentSettings.twilioToken = encrypt(newSettings.twilioToken)
 
     await currentSettings.save()
+
+    if (needReboot) process.exit(1)
 }
 
 exports.getDefaultSettings = () => this.getDecryptedSettings(process.env.DEFAULT_SETTINGS_ID)
@@ -54,7 +60,7 @@ exports.getDecryptedSettings = async (id) => {
 
     if (!settings) {
         settings = await this.getSettings(id)
-        settings.secretKey = decrypt(settings.secretKey)
+        settings.secretKey && (settings.secretKey = decrypt(settings.secretKey))
         settings.sendGridKey && (settings.sendGridKey = decrypt(settings.sendGridKey))
         settings.twilioToken && (settings.twilioToken = decrypt(settings.twilioToken))
 

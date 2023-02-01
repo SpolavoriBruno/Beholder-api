@@ -9,7 +9,7 @@ exports.insertOrderTemplate = orderTemplate =>
     orderTemplateExists(orderTemplate.name, orderTemplate.symbol).then(exist => {
         if (exist) return Promise.reject({ status: 400, message: 'Order template already exists' })
         return orderTemplateModel.create(orderTemplate)
-    })
+    }).catch(error => logger.error(error))
 
 exports.deleteOrderTemplate = id => orderTemplateModel.destroy({ where: { id } })
 

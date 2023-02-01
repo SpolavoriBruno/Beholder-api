@@ -3,8 +3,8 @@ const { getDefaultSettings } = require('./repositories/settingsRepository')
 const { MONITOR_TYPES } = require('./repositories/monitorsRepository')
 const { doAction } = require('./controllers/actionController')
 const { INDEX_KEYS } = require('./utils/indexes')
-const logger = require('./utils/logger')
 const { sleep } = require('./utils/time')
+const logger = require('./utils/logger')
 
 const MEMORY = {}
 const BRAIN = {}
@@ -183,14 +183,16 @@ const evalDecision = (automation, cb) => {
         if (LOGS || automation.logs) logger.info(`Beholder decide to execute, but hasn't actions - ${automation.id}`)
         return
     }
+
     if (LOGS || automation.logs) logger.info(`Beholder decide to execute - ${automation.id}`)
+
     getDefaultSettings().then(settings => {
         automation.actions.map(async action => {
             const result = await doAction(settings, action, automation, this)
             if (result && typeof cb === 'function') cb(result)
             if (automation.logs) logger.info(`Automation ${automation.name} executed at ${new Date().toISOString()}`)
         })
-    })
+    }).catch(console.error)
 }
 
 const findAutomations = memoryKey => {

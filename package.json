@@ -30,7 +30,9 @@
     "db:create": "sequelize-cli db:create",
     "db:migrate": "sequelize-cli db:migrate",
     "db:roll": "sequelize-cli db:migrate:undo:all",
-    "db:seed": "sequelize-cli db:seed:all"
+    "db:seed": "sequelize-cli db:seed:all",
+    "docker:build": "sudo docker compose up --build",
+    "docker:dev": "sudo docker compose up"
   },
   "keywords": [],
   "author": "",

@@ -1,0 +1,43 @@
+services:
+  api:
+    build:
+      context: .
+      target: prod
+    command: node /usr/src/app/node_modules/.bin/nodemon --trace-uncaught -r dotenv/config bin/server
+    # command: npm run dev
+    ports:
+      - "8000:8000"
+    networks:
+      - quazar
+    volumes:
+      - .:/usr/src/app
+      # - logs:usr/src/app/logs
+    env_file:
+      - .env
+    environment:
+      - DB_HOST=postgres
+    depends_on:
+      - redis
+      - postgres
+  redis:
+    image: redis:alpine3.16
+    networks:
+      - quazar
+  postgres:
+    image: postgres:alpine3.16
+    environment:
+      - POSTGRES_PASSWORD=db-dev
+      - POSTGRES_USER=db-dev
+      - POSTGRES_DB=beholder
+    ports:
+      - "5432:5432"
+    networks:
+      - quazar
+
+volumes:
+  logs: {}
+  db: {}
+
+networks:
+  quazar:
+    driver: bridge

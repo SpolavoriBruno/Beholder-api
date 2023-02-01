@@ -13,7 +13,7 @@ const HOURS_IN_DAY = 24
 exports.doLogin = async (req, res, next) => {
     const email = req.body.email
     const password = req.body.password
-    const daysToExpire = req.body.remember ? JWT_EXPIRES_DEFAULT : JWT_EXPIRES_REMEMBER
+    const secondsToExpire = req.body.remember ? JWT_EXPIRES_DEFAULT : JWT_EXPIRES_REMEMBER
 
     const settings = await getSettingsByEmail(email)
 
@@ -22,7 +22,7 @@ exports.doLogin = async (req, res, next) => {
 
         if (isValid) {
             const token = jwt.sign({ id: settings.id }, JWT_SECRET, {
-                expiresIn: MINUTES_IN_HOUR * HOURS_IN_DAY * daysToExpire
+                expiresIn: MINUTES_IN_HOUR * HOURS_IN_DAY * secondsToExpire
             })
             return res.json({ token })
         }

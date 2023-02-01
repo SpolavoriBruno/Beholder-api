@@ -6,12 +6,12 @@ const PAGE_SIZE = 10
 
 exports.insertOrder = newOrder => orderModel.create(newOrder)
 
-exports.getReportOrders = (quoteAsset, startDate, endDate) => {
+exports.getReportOrders = (asset, startDate, endDate) => {
     startDate = startDate || 0
     endDate = endDate || Date.now()
     return orderModel.findAll({
         where: {
-            symbol: { [Sequelize.Op.like]: `%${quoteAsset}` },
+            symbol: { [Sequelize.Op.like]: `%${asset}%` },
             transactTime: { [Sequelize.Op.between]: [startDate, endDate] },
             status: 'FILLED',
             net: { [Sequelize.Op.gt]: 0 }
@@ -26,7 +26,7 @@ exports.getOrders = (symbol, page = 1) => {
     const options = {
         where: {},
         include: automationModel,
-        order: [['updatedAt', 'DESC']],
+        order: [['createdAt', 'DESC']],
         limit: PAGE_SIZE,
         offset: PAGE_SIZE * (page - 1)
     }
@@ -64,6 +64,7 @@ exports.getLastFilledOrders = _ => orderModel.findAll({
         where: { id: ids },
         raw: true
     }))
+    .catch(console.error)
 
 exports.updateOrderById = async (id, newOrder) => {
     const order = await this.getOrderById(id)
@@ -77,7 +78,6 @@ exports.updateOrderByOrderId = async (orderId, clientOrderId, newOrder) => {
 
 exports.LIMIT_TYPES = ["LIMIT", "STOP_LOSS_LIMIT", "TAKE_PROFIT_LIMIT"]
 exports.STOP_TYPES = ["STOP_LOSS", "STOP_LOSS_LIMIT", "TAKE_PROFIT", "TAKE_PROFIT_LIMIT"]
-
 
 const updateOrder = async (currentOrder, newOrder) => {
     if (newOrder.status && newOrder.status !== currentOrder.status)
@@ -97,6 +97,9 @@ const updateOrder = async (currentOrder, newOrder) => {
 
     if (newOrder.net)
         currentOrder.net = newOrder.net
+
+    if (newOrder.quantity && newOrder.quantity !== currentOrder.quantity)
+        currentOrder.quantity = newOrder.quantity
 
     if (newOrder.isMaker !== undefined && newOrder.isMaker !== currentOrder.isMaker)
         currentOrder.isMaker = newOrder.isMaker

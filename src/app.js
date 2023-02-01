@@ -15,9 +15,8 @@ app.use(morgan('dev'))
 
 app.use(router)
 
-app.use('/error', (req, res, next) => { throw new Error('Rota de erro') })
-app.use('/', (req, res, next) => { res.send('Hello World') })
-
+app.use('/error', (req, res) => { throw new Error('Rota de erro') })
+app.use('/', (req, res) => { res.send('Hello World') })
 app.use(require('./middlewares/errorMiddleware'))
 
 module.exports = app
