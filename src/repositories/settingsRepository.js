@@ -50,7 +50,9 @@ exports.updateSettings = async (id, newSettings) => {
 
     await currentSettings.save()
 
-    if (needReboot) process.exit(1)
+    // Considerando que rodará no Docker, encerrar o processo com erro irá reinicia-lo
+    if (needReboot) setTimeout(() => process.exit(1), 2000)
+    // TODO: Criar metodo que realmente reinicia o bot, recarregando as configurações
 }
 
 exports.getDefaultSettings = () => this.getDecryptedSettings(process.env.DEFAULT_SETTINGS_ID)
