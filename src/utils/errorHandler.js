@@ -44,6 +44,6 @@ module.exports = (error, callback, options) => {
             body = error
             logger.error(error)
     }
-
+    console.log(status, body)
     if (callback) return callback(status, body)
 }
