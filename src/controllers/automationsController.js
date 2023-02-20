@@ -20,7 +20,7 @@ exports.startAutomation = async (req, res) => {
     automation.isActive = true
     await automation.save()
 
-    res.json(automation)
+    res.status(202).json(automation)
     updateBrain(automation.get({ plain: true }))
     if (automation.logs) logger.info(`Automation ${automation.name} started`)
 }
@@ -34,7 +34,7 @@ exports.stopAutomation = async (req, res) => {
     automation.isActive = false
     await automation.save()
 
-    res.json(automation)
+    res.status(202).json(automation)
     deleteBrain(automation.get({ plain: true }))
     if (automation.logs) logger.info(`Automation ${automation.name} stoped`)
 }
@@ -42,7 +42,13 @@ exports.stopAutomation = async (req, res) => {
 exports.getAutomation = (req, res) => {
     const id = req.params.id
     getAutomation(id)
-        .then(automation => res.json(automation))
+        .then(automation => {
+            if (automation == null) res
+                .status(404)
+                .json({ msg: "Automação não encontrada" })
+
+            else res.json(automation)
+        })
         .catch(e => errorHandler(e, (s, b) => res.status(s).json(b)))
 }
 
@@ -55,6 +61,8 @@ exports.getAutomations = (req, res) => {
 
 exports.insertAutomation = async (req, res) => {
     const newAutomation = req.body
+
+    if (!newAutomation) return res.sendStatus(400)
 
     if (!validateConditions(newAutomation.conditions))
         return res.status(400).json(`Invalid conditions`)
@@ -100,6 +108,9 @@ exports.insertAutomation = async (req, res) => {
 exports.updateAutomation = async (req, res) => {
     const id = req.params.id
     const newAutomation = req.body
+
+    if (!newAutomation) return res.sendStatus(400)
+
     if (!validateConditions(newAutomation.conditions))
         return res.status(400).json('You need to have at least one condition per automation!');
 
@@ -124,12 +135,13 @@ exports.updateAutomation = async (req, res) => {
                 return res.status(500).json("Error updating actions")
             }
 
+            let plainAutomation = automation.get({ plain: true })
             if (automation.isActive) {
-                deleteBrain(automation.get({ plain: true }))
-                updateBrain(automation.get({ plain: true }))
-            } else {
-                deleteBrain(automation.get({ plain: true }))
-            }
+                deleteBrain(plainAutomation)
+                updateBrain(plainAutomation)
+            } else
+                deleteBrain(plainAutomation)
+
             res.json(automation)
             transaction.commit()
         })
